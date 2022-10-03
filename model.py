@@ -36,12 +36,12 @@ class Advert(Base):  # pylint: disable=C0115
     __tablename__ = "advert"
     id = Column(Integer, primary_key=True)
     create_date = Column(DateTime, server_default=func.now())
-    status = Column(Enum(enum.Enum("status", config.DB_STATUS_VALUES)))
+    status = Column(Enum(enum.Enum("status", config.STATUS_VALUES)))
     user_id = Column(ForeignKey("user.id"))
-    distinct = Column(Enum(enum.Enum("distinct", config.DB_DISTINCT_VALUES)))
+    distinct = Column(Enum(enum.Enum("distinct", config.DISTINCT_VALUES)))
     street = Column(String(50))
     building_type = Column(
-        Enum(enum.Enum("building_type", config.DB_BUILDING_TYPE_VALUES))
+        Enum(enum.Enum("building_type", config.BUILDING_TYPE_VALUES))
     )
     floor = Column(Integer)
     square = Column(Integer)

@@ -8,7 +8,7 @@ from sqlalchemy import func
 from sqlalchemy import String
 from sqlalchemy import Integer
 from sqlalchemy import Boolean
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import JSON
 from sqlalchemy import Enum
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -53,7 +53,7 @@ class Advert(Base):  # pylint: disable=C0115
     price_uah = Column(Integer)
     price_usd = Column(Integer)
     contact = Column(String)
-    photo = Column(JSONB)
+    photo = Column(JSON)
 
     # required in order to access columns with server defaults
     # or SQL expression defaults, subsequent to a flush, without

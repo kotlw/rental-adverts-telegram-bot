@@ -8,12 +8,9 @@ import callback.common
 
 start_command = CommandHandler("start", callback.common.start)
 
-kb_select_error = (
-    MessageHandler(
-        filters.ALL & ~filters.COMMAND,
-        callback.common.create_reply_text_callback(
-            msg.common.KEYBOARD_SELECT_VALUE_ERROR
-        ),
-    ),
-)
 
+def error(error_text: str):
+    return MessageHandler(
+        filters.ALL & ~filters.COMMAND,
+        callback.common.create_reply_text_callback(error_text),
+    )

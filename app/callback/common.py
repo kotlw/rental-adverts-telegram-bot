@@ -37,7 +37,7 @@ async def start(update: Update, _) -> None:
 
 def create_reply_text_callback(
     text: str,
-    reply_markup: ReplyMarkup = ReplyKeyboardRemove(),
+    reply_markup: ReplyMarkup = None,  # type: ignore
     return_value: Any = None,
 ) -> HandlerCallback[Update, CCT, Any]:
     """Returns callback with defined replying text, reply_markup and

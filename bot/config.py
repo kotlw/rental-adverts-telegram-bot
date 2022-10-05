@@ -6,8 +6,15 @@ DB_URI = os.getenv("DB_URI") or ""
 ALEMBIC_DB_URI = os.getenv("DB_URI") or ""
 
 STATUS_VALUES = ["pending", "approved", "hidden"]
-DISTINCT_VALUES = ["район1", "район2", "район3"]
-BUILDING_TYPE_VALUES = ["новобудова", "хрущовка"]
+DISTINCT_VALUES = [
+    "Галицький",
+    "Залізничний",
+    "Личаківський",
+    "Франківський",
+    "Шевченківський",
+    "Сихівський",
+]
+BUILDING_TYPE_VALUES = ["новобудова", "не новобудова (чешка, хрущовка, тощо)"]
 
 # Messages
 KEYBOARD_SELECT_VALUE_ERROR_MSG = (

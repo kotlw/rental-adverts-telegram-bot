@@ -12,6 +12,7 @@ async def start(update: Update, _):
         first_name=update.message.chat.first_name,
     )
 
+    await db_gateway.recreate()
     await db_gateway.upsert_user(user)
     await update.message.reply_text("Hello user")
 

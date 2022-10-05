@@ -1,4 +1,5 @@
-from functools import singledispatch
+import json
+from functools import singledispatchmethod
 
 from sqlalchemy import (
     Column,
@@ -11,6 +12,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
@@ -32,7 +34,7 @@ class User(Base):
 
 class Advert(Base):  # pylint: disable=missing-class-docstring
     __tablename__ = "advert"
-    id = Column(Integer, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True)
     status = Column(Enum(entity.StatusEnum))
     user_id = Column(ForeignKey("user.id"))
     distinct = Column(String)
@@ -65,7 +67,7 @@ class DBGateway:
             await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
 
-    async def upsert_user(self, user: entity.User):
+    async def upsert_user(self, user: entity.User) -> None:
         async with self.async_session() as session:
             result = await session.execute(
                 select([User.id]).where(User.id == user.id)
@@ -78,8 +80,23 @@ class DBGateway:
 
         await self.engine.dispose()
 
-    @singledispatch
-    def _from_entity(self, usr_entity: entity.User) -> User:
+    async def insert_advert(self, advert: entity.Advert) -> None:
+
+        async with self.async_session() as session:
+
+            async with session.begin():
+                session.add(self._from_entity(advert))
+
+            await session.commit()
+
+        await self.engine.dispose()
+
+    @singledispatchmethod
+    def _from_entity(self, arg) -> User | Advert:
+        raise NotImplementedError(f"Cannot map value of type {type(arg)}")
+
+    @_from_entity.register
+    def _(self, usr_entity: entity.User) -> User:
         return User(
             id=usr_entity.id,
             username=usr_entity.username,
@@ -88,7 +105,7 @@ class DBGateway:
             create_date=usr_entity.create_date,
         )
 
-    @_from_entity.register(entity.Advert)
+    @_from_entity.register
     def _(self, ad_entity: entity.Advert) -> Advert:
         return Advert(
             id=ad_entity.id,
@@ -105,7 +122,6 @@ class DBGateway:
             settlement_date=ad_entity.settlement_date,
             price=ad_entity.price,
             contact=ad_entity.contact,
-            photo=ad_entity.photo,
+            photo=json.dumps(ad_entity.photo),
             create_date=ad_entity.create_date,
         )
-

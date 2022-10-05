@@ -7,7 +7,7 @@ from telegram.ext import ConversationHandler
 from telegram.ext import MessageHandler
 from telegram.ext import filters
 
-from bot import app, txt, entity
+from bot import app, txt, entity, db_gateway
 from bot.helper.telegram import custom_filters
 
 
@@ -190,6 +190,16 @@ async def overview(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     media = txt.make_advert_post(entity.Advert.parse_obj(data))
     await update.message.reply_media_group(media)
 
+    return OVERVIEW
+
+
+async def submit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+
+    data = context.user_data["advert"]  # type: ignore
+    print(entity.Advert.parse_obj(data))
+    await db_gateway.insert_advert(entity.Advert.parse_obj(data))
+    await update.message.reply_text("subitted")
+
     return ConversationHandler.END
 
 
@@ -281,9 +291,10 @@ post_conversation = ConversationHandler(
         PHOTO: [
             MessageHandler(filters.PHOTO, photo),
             CommandHandler("done", overview),
-            MessageHandler(filters.ALL & ~filters.COMMAND, photo_value_error),
+            MessageHandler(~filters.COMMAND, photo_value_error),
         ],
         OVERVIEW: [
+            CommandHandler("submit", submit),
             MessageHandler(filters.PHOTO, overview),
             CommandHandler("done", overview),
         ],

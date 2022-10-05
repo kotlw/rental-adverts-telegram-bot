@@ -29,6 +29,48 @@ from bot.helper.telegram import custom_filters
 ) = range(14)
 
 
+async def _reply_post(update: Update, advert_dict: dict) -> None:
+    media = txt.make_advert_post(entity.Advert.parse_obj(advert_dict))
+    await update.message.reply_media_group(media)
+
+
+def _create_callback(
+    data_key: str,
+    ask_next: str,
+    reply_keyboard: list[list[str]] | None,
+    return_value: int,
+):
+    async def coroutine(
+        update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> int:
+
+        data = context.user_data["advert"]  # type: ignore
+        data[data_key] = update.message.text
+
+        rm = ReplyKeyboardRemove()
+
+        if context.user_data["is_edit"]:  # type: ignore
+            await update.message.reply_text(txt.EDIT_DONE, reply_markup=rm)
+            await _reply_post(update, data)
+            return OVERVIEW
+
+        if reply_keyboard:
+            rm = ReplyKeyboardMarkup(reply_keyboard)
+
+        await update.message.reply_text(ask_next, reply_markup=rm)
+
+        return return_value
+
+    return coroutine
+
+
+def _create_error_callback(error_message: str):
+    async def coroutine(update: Update, _) -> None:
+        await update.message.reply_text(error_message)
+
+    return coroutine
+
+
 async def entry_point(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> int:
@@ -45,203 +87,26 @@ async def entry_point(
     return DISTINCT
 
 
-async def distinct(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-
-    data = context.user_data["advert"]  # type: ignore
-    data["distinct"] = update.message.text
-
-    if context.user_data["is_edit"]:  # type: ignore
-        rm = ReplyKeyboardRemove()
-        await update.message.reply_text(txt.EDIT_DONE, reply_markup=rm)
-        media = txt.make_advert_post(entity.Advert.parse_obj(data))
-        await update.message.reply_media_group(media)
-        return OVERVIEW
-
-    rm = ReplyKeyboardRemove()
-    await update.message.reply_text(txt.ASK_STREET, reply_markup=rm)
-
-    return STREET
-
-
-async def street(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-
-    data = context.user_data["advert"]  # type: ignore
-    data["street"] = update.message.text
-
-    if context.user_data["is_edit"]:  # type: ignore
-        rm = ReplyKeyboardRemove()
-        await update.message.reply_text(txt.EDIT_DONE, reply_markup=rm)
-        media = txt.make_advert_post(entity.Advert.parse_obj(data))
-        await update.message.reply_media_group(media)
-        return OVERVIEW
-
-    rm = ReplyKeyboardMarkup([[b] for b in txt.BUILDING_TYPE_VALUES])
-
-    await update.message.reply_text(txt.ASK_BUILDING_TYPE, reply_markup=rm)
-
-    return BUILDING_TYPE
-
-
-async def building_type(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> int:
-
-    data = context.user_data["advert"]  # type: ignore
-    data["building_type"] = update.message.text
-
-    if context.user_data["is_edit"]:  # type: ignore
-        rm = ReplyKeyboardRemove()
-        await update.message.reply_text(txt.EDIT_DONE, reply_markup=rm)
-        media = txt.make_advert_post(entity.Advert.parse_obj(data))
-        await update.message.reply_media_group(media)
-        return OVERVIEW
-
-    rm = ReplyKeyboardRemove()
-    await update.message.reply_text(txt.ASK_FLOOR, reply_markup=rm)
-
-    return FLOOR
-
-
-async def floor(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-
-    data = context.user_data["advert"]  # type: ignore
-    data["floor"] = update.message.text
-
-    if context.user_data["is_edit"]:  # type: ignore
-        rm = ReplyKeyboardRemove()
-        await update.message.reply_text(txt.EDIT_DONE, reply_markup=rm)
-        media = txt.make_advert_post(entity.Advert.parse_obj(data))
-        await update.message.reply_media_group(media)
-        return OVERVIEW
-
-    await update.message.reply_text(txt.ASK_SQUARE)
-
-    return SQUARE
-
-
-async def square(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-
-    data = context.user_data["advert"]  # type: ignore
-    data["square"] = update.message.text
-
-    if context.user_data["is_edit"]:  # type: ignore
-        rm = ReplyKeyboardRemove()
-        await update.message.reply_text(txt.EDIT_DONE, reply_markup=rm)
-        media = txt.make_advert_post(entity.Advert.parse_obj(data))
-        await update.message.reply_media_group(media)
-        return OVERVIEW
-
-    await update.message.reply_text(txt.ASK_NUM_OF_ROOMS)
-
-    return NUM_OF_ROOMS
-
-
-async def num_of_rooms(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> int:
-
-    data = context.user_data["advert"]  # type: ignore
-    data["num_of_rooms"] = update.message.text
-
-    if context.user_data["is_edit"]:  # type: ignore
-        rm = ReplyKeyboardRemove()
-        await update.message.reply_text(txt.EDIT_DONE, reply_markup=rm)
-        media = txt.make_advert_post(entity.Advert.parse_obj(data))
-        await update.message.reply_media_group(media)
-        return OVERVIEW
-
-    await update.message.reply_text(txt.ASK_LAYOUT)
-
-    return LAYOUT
-
-
-async def layout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-
-    data = context.user_data["advert"]  # type: ignore
-    data["layout"] = update.message.text
-
-    if context.user_data["is_edit"]:  # type: ignore
-        rm = ReplyKeyboardRemove()
-        await update.message.reply_text(txt.EDIT_DONE, reply_markup=rm)
-        media = txt.make_advert_post(entity.Advert.parse_obj(data))
-        await update.message.reply_media_group(media)
-        return OVERVIEW
-
-    await update.message.reply_text(txt.ASK_DESCRIPTION)
-
-    return DESCRIPTION
-
-
-async def description(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> int:
-
-    data = context.user_data["advert"]  # type: ignore
-    data["description"] = update.message.text
-
-    if context.user_data["is_edit"]:  # type: ignore
-        rm = ReplyKeyboardRemove()
-        await update.message.reply_text(txt.EDIT_DONE, reply_markup=rm)
-        media = txt.make_advert_post(entity.Advert.parse_obj(data))
-        await update.message.reply_media_group(media)
-        return OVERVIEW
-
-    await update.message.reply_text(txt.ASK_SETTLEMENT_DATE)
-
-    return SETTLEMENT_DATE
-
-
-async def settlement_date(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> int:
-
-    data = context.user_data["advert"]  # type: ignore
-    data["settlement_date"] = update.message.text
-
-    if context.user_data["is_edit"]:  # type: ignore
-        rm = ReplyKeyboardRemove()
-        await update.message.reply_text(txt.EDIT_DONE, reply_markup=rm)
-        media = txt.make_advert_post(entity.Advert.parse_obj(data))
-        await update.message.reply_media_group(media)
-        return OVERVIEW
-
-    await update.message.reply_text(txt.ASK_PRICE)
-
-    return PRICE
-
-
-async def price(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-
-    data = context.user_data["advert"]  # type: ignore
-    data["price"] = update.message.text
-
-    if context.user_data["is_edit"]:  # type: ignore
-        rm = ReplyKeyboardRemove()
-        await update.message.reply_text(txt.EDIT_DONE, reply_markup=rm)
-        media = txt.make_advert_post(entity.Advert.parse_obj(data))
-        await update.message.reply_media_group(media)
-        return OVERVIEW
-
-    await update.message.reply_text(txt.ASK_CONTACT)
-
-    return CONTACT
-
-
-async def contact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-
-    data = context.user_data["advert"]  # type: ignore
-    data["contact"] = update.message.text
-
-    if context.user_data["is_edit"]:  # type: ignore
-        rm = ReplyKeyboardRemove()
-        await update.message.reply_text(txt.EDIT_DONE, reply_markup=rm)
-        media = txt.make_advert_post(entity.Advert.parse_obj(data))
-        await update.message.reply_media_group(media)
-        return OVERVIEW
-
-    await update.message.reply_text(txt.ASK_PHOTO)
-
-    return PHOTO
+distinct = _create_callback("distinct", txt.ASK_STREET, None, STREET)
+street = _create_callback(
+    "street",
+    txt.ASK_BUILDING_TYPE,
+    [[b] for b in txt.BUILDING_TYPE_VALUES],
+    BUILDING_TYPE,
+)
+building_type = _create_callback("building_type", txt.ASK_FLOOR, None, FLOOR)
+floor = _create_callback("floor", txt.ASK_SQUARE, None, SQUARE)
+square = _create_callback("square", txt.ASK_NUM_OF_ROOMS, None, NUM_OF_ROOMS)
+num_of_rooms = _create_callback("num_of_rooms", txt.ASK_LAYOUT, None, LAYOUT)
+layout = _create_callback("layout", txt.ASK_DESCRIPTION, None, DESCRIPTION)
+description = _create_callback(
+    "description", txt.ASK_SETTLEMENT_DATE, None, SETTLEMENT_DATE
+)
+settlement_date = _create_callback(
+    "settlement_date", txt.ASK_PRICE, None, PRICE
+)
+price = _create_callback("price", txt.ASK_CONTACT, None, CONTACT)
+contact = _create_callback("contact", txt.ASK_PHOTO, None, PHOTO)
 
 
 async def photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -254,10 +119,7 @@ async def photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     if len(data["photo"]) == 10:
         await update.message.reply_text(txt.PHOTO_MAX_LIMIT_ERROR)
-
-        media = txt.make_advert_post(entity.Advert.parse_obj(data))
-        await update.message.reply_media_group(media)
-
+        await _reply_post(update, data)
         return OVERVIEW
 
     return PHOTO
@@ -266,8 +128,7 @@ async def photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def overview(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     data = context.user_data["advert"]  # type: ignore
-    media = txt.make_advert_post(entity.Advert.parse_obj(data))
-    await update.message.reply_media_group(media)
+    await _reply_post(update, data)
 
     return OVERVIEW
 
@@ -327,6 +188,10 @@ async def edit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         rm = ReplyKeyboardRemove()
         await update.message.reply_text(txt.ASK_PRICE, reply_markup=rm)
         return PRICE
+    elif update.message.text == txt.EDIT_MARKUP["contact"]:
+        rm = ReplyKeyboardRemove()
+        await update.message.reply_text(txt.ASK_CONTACT, reply_markup=rm)
+        return CONTACT
     elif update.message.text == txt.EDIT_MARKUP["photo"]:
         context.user_data["advert"]["photo"] = []  # type: ignore
         rm = ReplyKeyboardRemove()
@@ -345,32 +210,13 @@ async def submit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return ConversationHandler.END
 
 
-async def kb_select_error(update: Update, _) -> None:
-    await update.message.reply_text(txt.KEYBOARD_SELECT_VALUE_ERROR)
-
-
-async def floor_value_error(update: Update, _) -> None:
-    await update.message.reply_text(txt.FLOOR_VALUE_ERROR)
-
-
-async def date_value_error(update: Update, _) -> None:
-    await update.message.reply_text(txt.DATE_VALUE_ERROR)
-
-
-async def photo_value_error(update: Update, _) -> None:
-    await update.message.reply_text(txt.PHOTO_VALUE_ERROR)
-
-
-async def num_of_rooms_value_error(update: Update, _) -> None:
-    await update.message.reply_text(txt.NUM_OF_ROOMS_VALUE_ERROR)
-
-
-async def text_input_error(update: Update, _) -> None:
-    await update.message.reply_text(txt.TEXT_INPUT_ERROR)
-
-
-async def invalid_date(update: Update, _) -> None:
-    await update.message.reply_text("invalid date")
+kb_select_error = _create_error_callback(txt.KEYBOARD_SELECT_VALUE_ERROR)
+floor_value_error = _create_error_callback(txt.FLOOR_VALUE_ERROR)
+date_value_error = _create_error_callback(txt.DATE_VALUE_ERROR)
+photo_value_error = _create_error_callback(txt.PHOTO_VALUE_ERROR)
+num_of_rooms_value_error = _create_error_callback(txt.NUM_OF_ROOMS_VALUE_ERROR)
+text_input_error = _create_error_callback(txt.TEXT_INPUT_ERROR)
+invalid_date = _create_error_callback("invalid date")
 
 
 async def cancel(update: Update, _) -> int:
@@ -416,7 +262,9 @@ post_conversation = ConversationHandler(
         ],
         DESCRIPTION: [
             MessageHandler(filters.Text(), description),
-            MessageHandler(~filters.COMMAND, text_input_error), ], SETTLEMENT_DATE: [
+            MessageHandler(~filters.COMMAND, text_input_error),
+        ],
+        SETTLEMENT_DATE: [
             MessageHandler(custom_filters.VALID_DATE, settlement_date),
             MessageHandler(~filters.COMMAND, date_value_error),
         ],
@@ -436,8 +284,6 @@ post_conversation = ConversationHandler(
         OVERVIEW: [
             CommandHandler("submit", submit),
             CommandHandler("edit", edit_start),
-            MessageHandler(filters.PHOTO, overview),
-            CommandHandler("done", overview),
         ],
         EDIT: [
             MessageHandler(filters.Text(list(txt.EDIT_MARKUP.values())), edit),

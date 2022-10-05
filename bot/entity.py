@@ -37,7 +37,6 @@ class Advert(BaseModel):
     create_date: datetime = datetime.now()
 
     @validator("settlement_date", pre=True)
-    def parse_birthdate(cls, value): # pylint: disable
-        return datetime.strptime(value,"%d.%m.%y").date()
-
+    def parse_birthdate(cls, value):  # pylint: disable
+        return datetime.strptime(value, "%d.%m.%y").date()
 

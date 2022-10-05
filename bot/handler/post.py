@@ -128,6 +128,10 @@ async def photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def overview(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     data = context.user_data["advert"]  # type: ignore
+    if not data.get("photo"):
+        await update.message.reply_text(txt.PHOTO_VALUE_ERROR)
+        return PHOTO
+
     await _reply_post(update, data)
 
     return OVERVIEW

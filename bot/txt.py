@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from telegram import InputMediaPhoto
 from telegram import InputMediaAudio
 from telegram import InputMediaDocument
@@ -80,7 +82,7 @@ DATE_VALUE_ERROR = (
 TEXT_INPUT_ERROR = "🔴 Будь-ласка введіть текст"
 
 PHOTO_VALUE_ERROR = (
-    "🔴 Будь-ласка завантажте фото. "
+    "🔴 Будь-ласка завантажте хочаб одне фото. "
     "Якщо Ви завершили введіть /done для підтвердження, "
     "або введіть /cancel для відміни."
 )
@@ -130,7 +132,8 @@ def make_advert_post(
         f"<b>Кількість кімнат:</b> {data.num_of_rooms}\n"
         f"<b>Планування:</b> {data.layout}\n"
         f"<b>Опис:</b> {data.description}\n"
-        f"<b>Дата можливого заселення:</b> {data.settlement_date}\n"
+        f"<b>Дата можливого заселення:</b> "
+        f"{data.settlement_date.strftime('%d.%m.%y')}\n"
         f"<b>Ціна:</b> {data.price} $\n"
         f"<b>Контакти:</b> {data.contact}\n"
         "\n/edit - редагувати"

@@ -111,7 +111,7 @@ KEYBOARD_SELECT_VALUE_ERROR = (
 
 def make_advert_post(
     data: entity.Advert,
-    edit_index: int = None,
+    index: int = None,
     show_submit: bool = True,
     show_status=False,
 ) -> list[
@@ -129,10 +129,13 @@ def make_advert_post(
         entity.StatusEnum.APPROVED: "прийнято",
         entity.StatusEnum.HIDDEN: "приховано",
     }
-    submit = "\n/submit - відправити" if show_submit else ""
     status = (
         f"\n<b>Статус:</b> {status_map[data.status]}" if show_status else ""
     )
+    edit = f"\n/edit{index or ''} - редагувати"
+    submit = "\n/submit - відправити" if show_submit else ""
+    delete = f"\n/delete{index or ''} - видалити" if not show_submit else ""
+    cancel = "\n/cancel - відміна" if show_submit else ""
 
     media = [InputMediaPhoto(p) for p in data.photo]
     media[-1].parse_mode = ParseMode.HTML
@@ -150,8 +153,10 @@ def make_advert_post(
         f"<b>Ціна:</b> {data.price} $\n"
         f"<b>Контакти:</b> {data.contact}\n"
         f"{status}"
-        f"\n/edit{edit_index or ''} - редагувати\n"
         f"{submit}"
+        f"{edit}"
+        f"{delete}"
+        f"{cancel}"
     )
 
     return media

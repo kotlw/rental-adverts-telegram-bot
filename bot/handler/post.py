@@ -91,7 +91,7 @@ async def my_posts(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     posts = await db_gateway.get_user_posts(update.message.chat.id)
     for i, p in enumerate(posts):
         media = txt.make_advert_post(
-            p, edit_index=i + 1, show_submit=False, show_status=True
+            p, index=i + 1, show_submit=False, show_status=True
         )
         await update.message.reply_media_group(media)
 
@@ -119,6 +119,20 @@ async def edit_my_posts(
     await update.message.reply_text("chose to edit", reply_markup=rm)
 
     return EDIT
+
+
+async def delete_my_posts(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> int:
+
+    user_data = context.user_data
+    index = int(update.message.text.replace("/delete", "")) - 1
+    delete_id = user_data["posts"][index].id  # type: ignore
+
+    await db_gateway.delete_post(delete_id)
+    await update.message.reply_text("deleted")
+
+    return ConversationHandler.END
 
 
 distinct = _create_callback("distinct", txt.ASK_STREET, None, STREET)
@@ -331,7 +345,8 @@ post_conversation = ConversationHandler(
             MessageHandler(~filters.COMMAND, text_input_error),
         ],
         MY_POSTS: [
-            MessageHandler(filters.Regex("^\\/edit[0-9]$"), edit_my_posts)
+            MessageHandler(filters.Regex("^\\/edit[0-9]$"), edit_my_posts),
+            MessageHandler(filters.Regex("^\\/delete[0-9]$"), delete_my_posts),
         ],
     },
     fallbacks=[CommandHandler("cancel", cancel)],

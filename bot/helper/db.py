@@ -13,6 +13,7 @@ from sqlalchemy import (
     Enum,
     select,
     update,
+    delete,
 )
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.postgresql import UUID
@@ -123,6 +124,19 @@ class DBGateway:
         await self.engine.dispose()
 
         return posts
+
+    async def delete_post(self, advert_id: uuid.UUID) -> None:
+
+        async with self.async_session() as session:
+
+            await session.execute(
+                delete(Advert).where(Advert.id == advert_id)
+            )
+
+            await session.commit()
+
+        await self.engine.dispose()
+
 
     @singledispatchmethod
     def _from_entity(self, arg):

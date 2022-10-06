@@ -13,7 +13,7 @@ async def start(update: Update, _):
     )
 
     await db_gateway.recreate()
-    await db_gateway.upsert_user(user)
+    await db_gateway.insert_user_if_not_exist(user)
     await update.message.reply_text("Hello user")
 
 

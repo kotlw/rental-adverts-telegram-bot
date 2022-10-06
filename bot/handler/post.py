@@ -26,7 +26,8 @@ from bot.helper.telegram import custom_filters
     PHOTO,
     OVERVIEW,
     EDIT,
-) = range(14)
+    MY_POSTS,
+) = range(15)
 
 
 async def _reply_post(update: Update, advert_dict: dict) -> None:
@@ -71,9 +72,7 @@ def _create_error_callback(error_message: str):
     return coroutine
 
 
-async def entry_point(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> int:
+async def post(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     rm = ReplyKeyboardMarkup([[b] for b in txt.DISTINCT_VALUES])
 
     await update.message.reply_text(txt.POST_START)
@@ -85,6 +84,41 @@ async def entry_point(
     context.user_data["is_edit"] = False  # type: ignore
 
     return DISTINCT
+
+
+async def my_posts(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+
+    posts = await db_gateway.get_user_posts(update.message.chat.id)
+    for i, p in enumerate(posts):
+        media = txt.make_advert_post(
+            p, edit_index=i + 1, show_submit=False, show_status=True
+        )
+        await update.message.reply_media_group(media)
+
+    context.user_data["posts"] = posts  # type: ignore
+
+    return MY_POSTS
+
+
+async def edit_my_posts(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> int:
+
+    user_data = context.user_data
+    index = int(update.message.text.replace("/edit", "")) - 1
+    user_data["advert"] = user_data["posts"][index].dict()  # type: ignore
+    # TODO (vk): think about converting date on dict() call
+    # or gather data from the beginning in entity.Advert instead of dict
+    user_data["advert"]["settlement_date"] = user_data["posts"][  # type: ignore
+        index
+    ].settlement_date.strftime(
+        "%d.%m.%y"
+    )
+    user_data["is_edit"] = True  # type: ignore
+    rm = ReplyKeyboardMarkup([[b] for b in txt.EDIT_MARKUP.values()])
+    await update.message.reply_text("chose to edit", reply_markup=rm)
+
+    return EDIT
 
 
 distinct = _create_callback("distinct", txt.ASK_STREET, None, STREET)
@@ -208,7 +242,7 @@ async def edit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def submit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     data = context.user_data["advert"]  # type: ignore
-    await db_gateway.insert_advert(entity.Advert.parse_obj(data))
+    await db_gateway.upsert_advert(entity.Advert.parse_obj(data))
     await update.message.reply_text(txt.SUBMIT_ADVERT)
 
     return ConversationHandler.END
@@ -231,7 +265,10 @@ async def cancel(update: Update, _) -> int:
 
 
 post_conversation = ConversationHandler(
-    entry_points=[CommandHandler("post", entry_point)],  # type: ignore
+    entry_points=[  # type: ignore
+        CommandHandler("post", post),
+        CommandHandler("my_posts", my_posts),
+    ],
     states={  # type: ignore
         DISTINCT: [
             MessageHandler(filters.Text(txt.DISTINCT_VALUES), distinct),
@@ -292,6 +329,9 @@ post_conversation = ConversationHandler(
         EDIT: [
             MessageHandler(filters.Text(list(txt.EDIT_MARKUP.values())), edit),
             MessageHandler(~filters.COMMAND, text_input_error),
+        ],
+        MY_POSTS: [
+            MessageHandler(filters.Regex("^\\/edit[0-9]$"), edit_my_posts)
         ],
     },
     fallbacks=[CommandHandler("cancel", cancel)],

@@ -40,3 +40,7 @@ class Advert(BaseModel):
     def parse_birthdate(cls, value):  # pylint: disable
         return datetime.strptime(value, "%d.%m.%y").date()
 
+    class Config:
+        json_encoders = {
+            date: lambda x: x.strftime("%d.%m.%y"),
+        }

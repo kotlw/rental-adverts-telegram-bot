@@ -1,4 +1,6 @@
 import json
+import uuid
+from datetime import datetime
 from functools import singledispatchmethod
 
 from sqlalchemy import (
@@ -10,6 +12,7 @@ from sqlalchemy import (
     Boolean,
     Enum,
     select,
+    update,
 )
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.postgresql import UUID
@@ -67,8 +70,10 @@ class DBGateway:
             await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
 
-    async def upsert_user(self, user: entity.User) -> None:
+    async def insert_user_if_not_exist(self, user: entity.User) -> None:
+
         async with self.async_session() as session:
+
             result = await session.execute(
                 select([User.id]).where(User.id == user.id)
             )
@@ -80,19 +85,47 @@ class DBGateway:
 
         await self.engine.dispose()
 
-    async def insert_advert(self, advert: entity.Advert) -> None:
+
+    async def upsert_advert(self, advert: entity.Advert) -> None:
 
         async with self.async_session() as session:
+            result = await session.execute(
+                select([Advert.id]).where(Advert.id == advert.id)
+            )
 
-            async with session.begin():
+            if result.fetchone():
+                stmt = update(Advert).where(Advert.id == advert.id).values(
+                    {
+                        column: getattr(self._from_entity(advert), column)
+                        for column in Advert.__table__.columns.keys()
+                    }
+                )
+                await session.execute(stmt)
+            else:
                 session.add(self._from_entity(advert))
 
             await session.commit()
 
         await self.engine.dispose()
 
+    async def get_user_posts(self, user_id: int) -> list[entity.Advert]:
+
+        async with self.async_session() as session:
+
+            posts = await session.execute(
+                select(Advert).where(Advert.user_id == user_id)
+            )
+
+            posts = [self._to_entity(p[0]) for p in posts.all()]
+
+            await session.commit()
+
+        await self.engine.dispose()
+
+        return posts
+
     @singledispatchmethod
-    def _from_entity(self, arg) -> User | Advert:
+    def _from_entity(self, arg):
         raise NotImplementedError(f"Cannot map value of type {type(arg)}")
 
     @_from_entity.register
@@ -124,4 +157,41 @@ class DBGateway:
             contact=ad_entity.contact,
             photo=json.dumps(ad_entity.photo),
             create_date=ad_entity.create_date,
+        )
+
+    @singledispatchmethod
+    def _to_entity(self, arg):
+        raise NotImplementedError(f"Cannot map value of type {type(arg)}")
+
+    @_to_entity.register
+    def _(self, usr_model: User) -> entity.User:
+        return entity.User(
+            id=usr_model.id,
+            username=usr_model.username,
+            first_name=usr_model.first_name,
+            is_admin=usr_model.is_admin,
+            create_date=usr_model.create_date,
+        )
+
+    @_to_entity.register
+    def _(self, ad_model: Advert) -> entity.Advert:
+        return entity.Advert(
+            id=uuid.UUID(ad_model.id.hex),
+            status=ad_model.status,
+            user_id=ad_model.user_id,
+            distinct=ad_model.distinct,
+            street=ad_model.street,
+            building_type=ad_model.building_type,
+            floor=ad_model.floor,
+            square=ad_model.square,
+            num_of_rooms=ad_model.num_of_rooms,
+            layout=ad_model.layout,
+            description=ad_model.description,
+            settlement_date=datetime.strftime(
+                ad_model.settlement_date, "%d.%m.%y"
+            ),
+            price=ad_model.price,
+            contact=ad_model.contact,
+            photo=json.loads(ad_model.photo),
+            create_date=ad_model.create_date,
         )

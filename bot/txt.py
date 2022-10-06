@@ -63,7 +63,9 @@ SUBMIT_ADVERT = (
     "натиснути “/post” і виконати раніше згадані умови."
 )
 
-CANCEL = "🟢 Створення оголошення відмінено."
+CHOOSE_TO_EDIT = "Оберіть поле для редагування"
+CANT_EDIT = "🔴 Нажаль, не можна редагувати опубліковані оголошення."
+CANCEL = "🟢 Відмінено."
 EDIT_DONE = "🟢 Відредаговано."
 FLOOR_VALUE_ERROR = (
     "🔴 Будь-ласка введіть значення в межах від 1 до 27, "
@@ -160,3 +162,21 @@ def make_advert_post(
     )
 
     return media
+
+
+def make_filter_msg(data: dict) -> str:
+    distinct = ", ".join(data["distinct"]) if data["distinct"] else "Всі"
+    building_type = ", ".join(data["building_type"]) if data["building_type"] else "Всі"
+    floor = data["floor"]
+    price = data["price"]
+    num_of_rooms = data["num_of_rooms"]
+
+    msg = (
+        f"<b>Район:</b> {distinct}\n"
+        f"<b>Тип будинку:</b> {building_type}\n"
+        f"<b>Поверх:</b> {floor}\n"
+        f"<b>Ціна:</b> {price}\n"
+        f"<b>Кількість кімнат:</b> {num_of_rooms}\n"
+    )
+
+    return msg

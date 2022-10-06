@@ -107,6 +107,10 @@ async def edit_my_posts(
     user_data = context.user_data
     index = int(update.message.text.replace("/edit", "")) - 1
     user_data["advert"] = user_data["posts"][index].dict()  # type: ignore
+    status = user_data["advert"]["status"]  # type: ignore
+    if status == entity.StatusEnum.APPROVED:
+        await update.message.reply_text(txt.CANT_EDIT)
+        return ConversationHandler.END
     # TODO (vk): think about converting date on dict() call
     # or gather data from the beginning in entity.Advert instead of dict
     user_data["advert"]["settlement_date"] = user_data["posts"][  # type: ignore
@@ -116,7 +120,7 @@ async def edit_my_posts(
     )
     user_data["is_edit"] = True  # type: ignore
     rm = ReplyKeyboardMarkup([[b] for b in txt.EDIT_MARKUP.values()])
-    await update.message.reply_text("chose to edit", reply_markup=rm)
+    await update.message.reply_text(txt.CHOOSE_TO_EDIT, reply_markup=rm)
 
     return EDIT
 
@@ -191,7 +195,7 @@ async def edit_start(
     context.user_data["is_edit"] = True  # type: ignore
 
     rm = ReplyKeyboardMarkup([[b] for b in txt.EDIT_MARKUP.values()])
-    await update.message.reply_text("chose to edit", reply_markup=rm)
+    await update.message.reply_text(txt.CHOOSE_TO_EDIT, reply_markup=rm)
 
     return EDIT
 
@@ -278,6 +282,8 @@ async def cancel(update: Update, _) -> int:
     return ConversationHandler.END
 
 
+# TODO (vk): think about splitting adding and edit flows into separate
+# conversation handlers
 post_conversation = ConversationHandler(
     entry_points=[  # type: ignore
         CommandHandler("post", post),

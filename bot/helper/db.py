@@ -74,7 +74,6 @@ class DBGateway:
     async def insert_user_if_not_exist(self, user: entity.User) -> None:
 
         async with self.async_session() as session:
-
             result = await session.execute(
                 select([User.id]).where(User.id == user.id)
             )
@@ -86,7 +85,6 @@ class DBGateway:
 
         await self.engine.dispose()
 
-
     async def upsert_advert(self, advert: entity.Advert) -> None:
 
         async with self.async_session() as session:
@@ -95,11 +93,15 @@ class DBGateway:
             )
 
             if result.fetchone():
-                stmt = update(Advert).where(Advert.id == advert.id).values(
-                    {
-                        column: getattr(self._from_entity(advert), column)
-                        for column in Advert.__table__.columns.keys()
-                    }
+                stmt = (
+                    update(Advert)
+                    .where(Advert.id == advert.id)
+                    .values(
+                        {
+                            column: getattr(self._from_entity(advert), column)
+                            for column in Advert.__table__.columns.keys()
+                        }
+                    )
                 )
                 await session.execute(stmt)
             else:
@@ -112,13 +114,10 @@ class DBGateway:
     async def get_user_posts(self, user_id: int) -> list[entity.Advert]:
 
         async with self.async_session() as session:
-
             posts = await session.execute(
                 select(Advert).where(Advert.user_id == user_id)
             )
-
             posts = [self._to_entity(p[0]) for p in posts.all()]
-
             await session.commit()
 
         await self.engine.dispose()
@@ -128,15 +127,44 @@ class DBGateway:
     async def delete_post(self, advert_id: uuid.UUID) -> None:
 
         async with self.async_session() as session:
-
-            await session.execute(
-                delete(Advert).where(Advert.id == advert_id)
-            )
-
+            await session.execute(delete(Advert).where(Advert.id == advert_id))
             await session.commit()
 
         await self.engine.dispose()
 
+    async def get_posts_by_filter(
+        self, filter_data: dict
+    ) -> list[entity.Advert]:
+
+        async with self.async_session() as session:
+            stmt = select(Advert).where(Advert.status == filter_data["status"])
+
+            if filter_data["distinct"]:
+                stmt = stmt.where(Advert.distinct.in_(filter_data["distinct"]))
+
+            if filter_data["building_type"]:
+                stmt = stmt.where(
+                    Advert.building_type.in_(filter_data["building_type"])
+                )
+
+            if filter_data["floor"]:
+                stmt = stmt.where(Advert.floor.between(*filter_data["floor"]))
+
+            if filter_data["num_of_rooms"]:
+                stmt = stmt.where(
+                    Advert.num_of_rooms.between(*filter_data["floor"])
+                )
+
+            if filter_data["price"]:
+                stmt = stmt.where(Advert.price.between(*filter_data["price"]))
+
+            posts = await session.execute(stmt)
+            posts = [self._to_entity(p[0]) for p in posts.all()]
+            await session.commit()
+
+        await self.engine.dispose()
+
+        return posts
 
     @singledispatchmethod
     def _from_entity(self, arg):

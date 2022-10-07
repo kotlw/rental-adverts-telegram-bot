@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from telegram import InputMediaPhoto
 from telegram import InputMediaAudio
 from telegram import InputMediaDocument
@@ -7,8 +5,6 @@ from telegram import InputMediaVideo
 from telegram.constants import ParseMode
 
 from bot import entity
-
-STATUS_VALUES = ["pending", "approved", "hidden"]
 
 DISTINCT_VALUES = [
     "Галицький",
@@ -105,6 +101,7 @@ EDIT_MARKUP = {
     "photo": "Фото",
 }
 
+NO_ADVERTS_FOUND = "🔴 Нажаль за Вашими критеріями оголошень не знайдено."
 
 KEYBOARD_SELECT_VALUE_ERROR = (
     "🔴 Будь-ласка оберіть елемент зі списку або введіть /cancel для відміни."
@@ -166,10 +163,24 @@ def make_advert_post(
 
 def make_filter_msg(data: dict) -> str:
     distinct = ", ".join(data["distinct"]) if data["distinct"] else "Всі"
-    building_type = ", ".join(data["building_type"]) if data["building_type"] else "Всі"
-    floor = data["floor"]
-    price = data["price"]
-    num_of_rooms = data["num_of_rooms"]
+    building_type = (
+        ", ".join(data["building_type"]) if data["building_type"] else "Всі"
+    )
+    floor = (
+        f"від {data['floor'][0]} до {data['floor'][1]}"
+        if data["floor"]
+        else "Будь-який"
+    )
+    price = (
+        f"від {data['price'][0]} до {data['price'][1]}"
+        if data["price"]
+        else "Будь-яка"
+    )
+    num_of_rooms = (
+        f"від {data['num_of_rooms'][0]} до {data['num_of_rooms'][1]}"
+        if data["num_of_rooms"]
+        else "Будь-яка"
+    )
 
     msg = (
         f"<b>Район:</b> {distinct}\n"

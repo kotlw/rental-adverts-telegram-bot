@@ -1,16 +1,22 @@
-import enum
+import abc
+
+from dataclasses import dataclass
+from datetime import date, datetime
 from uuid import UUID, uuid4
-from datetime import datetime, date
-
-from pydantic import BaseModel, validator
-
-class StatusEnum(enum.Enum):
-    PENDING = 1
-    APPROVED = 2
-    HIDDEN = 3
+from enum import Enum
 
 
-class User(BaseModel):
+class AdvertStatusEnum(Enum):
+    PENDING = "розглядається"
+    APPROVED = "опубліковано"
+
+
+@dataclass(slots=True)
+class BaseEntity(abc.ABC):
+    ...
+
+@dataclass(slots=True, kw_only=True)
+class User(BaseEntity):
     id: int
     username: str
     first_name: str
@@ -18,9 +24,8 @@ class User(BaseModel):
     create_date: datetime = datetime.now()
 
 
-class Advert(BaseModel):
-    id: UUID = uuid4()
-    status: StatusEnum = StatusEnum.PENDING
+@dataclass(slots=True, kw_only=True)
+class Advert(BaseEntity):
     user_id: int
     distinct: str
     street: str
@@ -34,9 +39,7 @@ class Advert(BaseModel):
     price: int
     contact: str
     photo: list[str]
+    id: UUID = uuid4()
+    status: AdvertStatusEnum = AdvertStatusEnum.PENDING
     create_date: datetime = datetime.now()
-
-    @validator("settlement_date", pre=True)
-    def parse_birthdate(cls, value):  # pylint: disable
-        return datetime.strptime(value, "%d.%m.%y").date()
 

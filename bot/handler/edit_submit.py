@@ -38,6 +38,8 @@ END = ConversationHandler.END
     PHOTO,
     OVERVIEW,
 ) = range(13)
+DISTINCT = "distinct"
+STREET = "street"
 
 
 def _make_advert_msg(advert: entity.Advert):
@@ -95,6 +97,28 @@ def _create_reply_markup(
     return wrapper(result)
 
 
+def _create_step(
+    text: str,
+    reply_markup: ReplyMarkup | None = None,
+    next_state: int | None = None,
+):
+    async def coroutine(
+        update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> int | None:
+
+        msg = update.message
+
+        prev_state = context.user_data["prev_state"]  # type: ignore
+        context.user_data[_BUCKET_KEY][prev_state] = msg.text  # type: ignore
+        context.user_data["prev_state"] = next_state  # type: ignore
+
+        await msg.reply_text(text, reply_markup=reply_markup)  # type: ignore
+
+        return next_state
+
+    return coroutine
+
+
 def _create_callback(
     text: str,
     reply_markup: ReplyMarkup | None = None,
@@ -139,12 +163,30 @@ def _create_handlers(
 
 async def post_advert(
     update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> int | None:
+) -> int:
 
     msg = update.message
 
     data = context.user_data.get(_BUCKET_KEY, {})  # type: ignore
     data["user_id"] = msg.chat.id
+
+    rm = _create_reply_markup(cfg.Btn.distincts, 2)
+    await msg.reply_text(cfg.Txt.post_advert)  # type: ignore
+    await msg.reply_text(cfg.Txt.ask_distinct, reply_markup=rm)  # type: ignore
+
+    return DISTINCT
+
+
+
+async def edit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    pass
+
+
+async def choose_edit(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> int:
+
+    msg = update.message
 
     rm = _create_reply_markup(cfg.Btn.distincts, 2)
     await msg.reply_text(cfg.Txt.post_advert)  # type: ignore
@@ -194,7 +236,20 @@ async def submit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return END
 
 
-post_advert_conv = ConversationHandler(
+async def distinct(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+
+    msg = update.message
+
+    prev_state = context.user_data["prev_state"]  # type: ignore
+    context.user_data[_BUCKET_KEY][prev_state] = msg.text  # type: ignore
+    context.user_data["prev_state"] = next_state  # type: ignore
+
+    await msg.reply_text(text, reply_markup=reply_markup)  # type: ignore
+
+    return next_state
+
+
+edit_submit.conv = ConversationHandler(
     entry_points=[  # type: ignore
         CommandHandler(cfg.Cmd.post_advert, post_advert),  # type: ignore
     ],

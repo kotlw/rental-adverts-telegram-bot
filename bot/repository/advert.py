@@ -1,4 +1,6 @@
 import json
+import uuid
+from datetime import datetime
 
 from sqlalchemy import (
     Column,
@@ -8,6 +10,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    select
 )
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -39,6 +42,19 @@ class AdvertModel(base.BaseModel):
 class AdvertRepository(base.BaseRepository):
     model = AdvertModel
 
+    async def get_user_posts(self, user_id: int) -> list[entity.Advert]:
+
+        async with self.async_session() as session:
+            stmt = select(AdvertModel).where(AdvertModel.user_id == user_id)
+            adverts = await session.execute(stmt)
+
+            adverts = [self._to_entity(p[0]) for p in adverts.all()]
+            await session.commit()
+
+        await self.engine.dispose()
+
+        return adverts
+
     def _from_entity(self, entity_: entity.Advert) -> AdvertModel:
         return AdvertModel(
             id=entity_.id,
@@ -57,4 +73,24 @@ class AdvertRepository(base.BaseRepository):
             contact=entity_.contact,
             photo=json.dumps(entity_.photo),
             create_date=entity_.create_date,
+        )
+
+    def _to_entity(self, sa_obj: AdvertModel) -> entity.Advert:
+        return entity.Advert(
+            id=uuid.UUID(str(sa_obj.id)),
+            status=entity.AdvertStatusEnum(sa_obj.status),
+            user_id=sa_obj.user_id,
+            distinct=sa_obj.distinct,
+            street=sa_obj.street,
+            building_type=sa_obj.building_type,
+            floor=sa_obj.floor,
+            square=sa_obj.square,
+            num_of_rooms=sa_obj.num_of_rooms,
+            layout=sa_obj.layout,
+            description=sa_obj.description,
+            settlement_date=sa_obj.settlement_date,
+            price=sa_obj.price,
+            contact=sa_obj.contact,
+            photo=json.loads(sa_obj.photo),
+            create_date=sa_obj.create_date,
         )

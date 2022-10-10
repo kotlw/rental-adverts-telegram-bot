@@ -7,9 +7,12 @@ from bot import entity
 class BotCommand:
     start = "start"
     post_advert = "post_advert"
+    my_adverts = "my_adverts"
 
     done = "done"
     cancel = "cancel"
+    submit = "submit"
+    edit = "edit"
 
 
 @dataclass(slots=True)
@@ -23,6 +26,22 @@ class BotButton:
         "Сихівський",
     ]
     building_types = ["новобудова", "не новобудова (чешка, хрущовка, тощо)"]
+    advert_fields = {
+        "distinct": "Район",
+        "street": "Вулиця",
+        "building_type": "Тип будинку",
+        "floor": "Поверх",
+        "square": "Площа",
+        "num_of_rooms": "Кількість кімнат",
+        "layout": "Планування",
+        "description": "Опис",
+        "settlement_date": "Дата можливого заселення",
+        "price": "Ціна",
+        "contact": "Контактні дані",
+        "photo": "Фото",
+    }
+    submit = {BotCommand.submit: "відправити"}
+    edit = {BotCommand.edit: "редагувати"}
 
 
 @dataclass(slots=True)
@@ -62,6 +81,9 @@ class BotText:
     ask_photo = f"Завантажте фото, по завершеню введіть /{BotCommand.done}"
 
     canceled = "🟢 Відмінено."
+
+    choose_edit_field = "Оберіть поле для редагування"
+
     text_value_error = "🔴 Будь-ласка введіть текст"
     select_value_error = (
         "🔴 Будь-ласка оберіть елемент зі списку або введіть "
@@ -98,8 +120,8 @@ class BotText:
     @staticmethod
     def advert_caption_html(
         advert: entity.Advert,
-        show_status: bool = False,
         command_hints: dict | None = None,
+        show_status: bool = False,
     ) -> str:
 
         status = (

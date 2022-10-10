@@ -6,15 +6,14 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
-    Date,
     DateTime,
     Enum,
     ForeignKey,
-    select
+    select,
 )
 from sqlalchemy.dialects.postgresql import UUID
 
-from bot import entity
+from bot import entity, cfg
 from bot.repository import base
 
 
@@ -32,7 +31,7 @@ class AdvertModel(base.BaseModel):
     num_of_rooms = Column(Integer)
     layout = Column(String)
     description = Column(String)
-    settlement_date = Column(Date)
+    settlement_date = Column(DateTime)
     price = Column(Integer)
     contact = Column(String)
     photo = Column(String)
@@ -68,7 +67,9 @@ class AdvertRepository(base.BaseRepository):
             num_of_rooms=entity_.num_of_rooms,
             layout=entity_.layout,
             description=entity_.description,
-            settlement_date=entity_.settlement_date,
+            settlement_date=datetime.strptime(
+                entity_.settlement_date, cfg.date_format
+            ),
             price=entity_.price,
             contact=entity_.contact,
             photo=json.dumps(entity_.photo),
@@ -88,7 +89,7 @@ class AdvertRepository(base.BaseRepository):
             num_of_rooms=sa_obj.num_of_rooms,
             layout=sa_obj.layout,
             description=sa_obj.description,
-            settlement_date=sa_obj.settlement_date,
+            settlement_date=sa_obj.settlement_date.strftime(cfg.date_format),
             price=sa_obj.price,
             contact=sa_obj.contact,
             photo=json.loads(sa_obj.photo),

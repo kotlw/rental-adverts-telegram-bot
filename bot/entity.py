@@ -1,9 +1,9 @@
 import abc
-
-from dataclasses import dataclass
-from datetime import date, datetime
-from uuid import UUID, uuid4
 from enum import Enum
+from typing import Dict
+from uuid import UUID, uuid4
+from datetime import date, datetime
+from dataclasses import dataclass, asdict
 
 
 class AdvertStatusEnum(Enum):
@@ -35,7 +35,7 @@ class Advert(BaseEntity):
     num_of_rooms: int
     layout: str
     description: str
-    settlement_date: date
+    settlement_date: str
     price: int
     contact: str
     photo: list[str]
@@ -43,3 +43,27 @@ class Advert(BaseEntity):
     status: AdvertStatusEnum = AdvertStatusEnum.PENDING
     create_date: datetime = datetime.now()
 
+    dict = asdict
+
+    @staticmethod
+    def from_dict(d: Dict):
+        res = {
+            "user_id": int(d["user_id"]),
+            "distinct": str(d["distinct"]),
+            "street": str(d["street"]),
+            "building_type": str(d["building_type"]),
+            "floor": int(d["floor"]),
+            "square": int(d["square"]),
+            "num_of_rooms": int(d["num_of_rooms"]),
+            "layout": str(d["layout"]),
+            "description": str(d["description"]),
+            "settlement_date": str(d["settlement_date"]),
+            "price": int(d["price"]),
+            "contact": str(d["contact"]),
+            "photo": list(d["photo"]),
+        }
+        if d.get("id"):
+            res["id"] = d["id"]
+            res["status"] = d["status"]
+            res["create_date"] = d["create_date"]
+        return Advert(**res)

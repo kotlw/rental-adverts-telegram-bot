@@ -28,12 +28,15 @@ CONTACT = "contact"
 PHOTO = "photo"
 OVERVIEW = "overview"
 EDIT = "edit"
+MY_ADVERTS = "my_adverts"
 
 
 async def post_advert(update: Update, context) -> str:
     msg = update.message
-    context.user_data[EDIT] = False
-    context.user_data[BUCKET_KEY] = {"user_id": msg.chat.id}
+    user_data = context.user_data
+
+    user_data[EDIT] = False
+    user_data[BUCKET_KEY] = {"user_id": msg.chat.id}
 
     rm = helpers.create_reply_markup(cfg.Btn.distincts, 2)
     await msg.reply_text(cfg.Txt.post_advert)
@@ -42,21 +45,27 @@ async def post_advert(update: Update, context) -> str:
     return DISTINCT
 
 
-async def my_adverts(update: Update, context) -> str:
+async def my_adverts(update: Update, context) -> int | str:
     msg = update.message
+    user_data = context.user_data
 
-    adverts = await repo.advert.get_user_posts(update.message.chat.id)
-    context.user_data[ADVERTS] = adverts
+    user_data[ADVERTS] = await repo.advert.get_user_posts(msg.chat.id)
 
-    for i, advert in enumerate(adverts):
-        hints = {**cfg.Btn.edit}
-        hints = {f"{k}{i}": v for k, v in hints.items()}
+    if not user_data[ADVERTS]:
+        await msg.reply_text(cfg.Txt.no_user_adverts_found)
+        return END
+
+    for i, advert in enumerate(user_data[ADVERTS]):
+        hints = {**cfg.Btn.edit, **cfg.Btn.delete}
+        indexed_hints = {f"{k}{i+1}": v for k, v in hints.items()}
+
         media = helpers.create_advert_media_group(
-            advert, command_hints=hints, show_status=True
+            advert, command_hints=indexed_hints, show_status=True
         )
+
         await msg.reply_media_group(media)
 
-    return EDIT
+    return MY_ADVERTS
 
 
 def _callback(
@@ -64,9 +73,11 @@ def _callback(
 ):
     async def callback(update: Update, context) -> str:
         msg = update.message
-        context.user_data[BUCKET_KEY][state] = msg.text
+        user_data = context.user_data
 
-        if context.user_data[EDIT]:
+        user_data[BUCKET_KEY][state] = msg.text
+
+        if user_data[EDIT]:
             return await overview(update, context)
 
         await msg.reply_text(text, reply_markup=reply_markup)
@@ -97,13 +108,14 @@ contact = _callback(CONTACT, cfg.Txt.ask_photo, _rm_remove, PHOTO)
 
 async def photo(update: Update, context) -> str:
     msg = update.message
+    user_data = context.user_data
+
     file_id = msg.photo[0].file_id
+    data = user_data[BUCKET_KEY]
+    data[PHOTO] = data.get(PHOTO, [])
+    data[PHOTO].append(file_id)
 
-    data = context.user_data[BUCKET_KEY]
-    data["photo"] = data.get("photo", [])
-    data["photo"].append(file_id)
-
-    if len(data["photo"]) == 10:
+    if len(data[PHOTO]) == 10:
         await msg.reply_text(cfg.Txt.photo_max_limit_error)
         return await overview(update, context)
 
@@ -112,13 +124,19 @@ async def photo(update: Update, context) -> str:
 
 async def overview(update: Update, context) -> str:
     msg = update.message
-    data = context.user_data[BUCKET_KEY]
+    user_data = context.user_data
 
-    if not data.get("photo"):
+    data = user_data[BUCKET_KEY]
+
+    # if no photoes were added and /done command is pressed
+    if not data.get(PHOTO):
         await msg.reply_text(cfg.Txt.photo_value_error)
         return PHOTO
 
-    advert = entity.Advert(**data)
+    rm = ReplyKeyboardRemove()
+    await msg.reply_text(cfg.Txt.advert_overview, reply_markup=rm)
+
+    advert = entity.Advert.from_dict(data)
     hints = {**cfg.Btn.edit, **cfg.Btn.submit}
     media = helpers.create_advert_media_group(advert, command_hints=hints)
     await msg.reply_media_group(media)
@@ -128,9 +146,10 @@ async def overview(update: Update, context) -> str:
 
 async def submit(update: Update, context) -> int:
     msg = update.message
+    user_data = context.user_data
 
-    data = context.user_data[BUCKET_KEY]
-    await repo.advert.upsert(entity.Advert(**data))
+    data = user_data[BUCKET_KEY]
+    await repo.advert.upsert(entity.Advert.from_dict(data))
     await msg.reply_text(cfg.Txt.submit_advert)
 
     return END
@@ -138,7 +157,9 @@ async def submit(update: Update, context) -> int:
 
 async def choose_edit_field(update: Update, context) -> str:
     msg = update.message
-    context.user_data[EDIT] = True
+    user_data = context.user_data
+
+    user_data[EDIT] = True
 
     rm = helpers.create_reply_markup(list(cfg.Btn.advert_fields.values()))
     await msg.reply_text(cfg.Txt.choose_edit_field, reply_markup=rm)
@@ -146,8 +167,37 @@ async def choose_edit_field(update: Update, context) -> str:
     return EDIT
 
 
+async def choose_edit_advert(update: Update, context) -> int | str:
+    msg = update.message
+    user_data = context.user_data
+
+    index = int(msg.text.replace(f"/{cfg.Cmd.edit}", "")) - 1
+    data = user_data[BUCKET_KEY] = user_data[ADVERTS][index].dict()
+
+    if data["status"] == entity.AdvertStatusEnum.APPROVED:
+        await msg.reply_text(cfg.Txt.cant_edit)
+        return END
+
+    await overview(update, context)
+    return await choose_edit_field(update, context)
+
+
+async def choose_delete_advert(update: Update, context) -> int:
+    msg = update.message
+    user_data = context.user_data
+
+    index = int(msg.text.replace(f"/{cfg.Cmd.delete}", "")) - 1
+    advert = user_data[ADVERTS][index]
+
+    await repo.advert.remove(advert)
+    await update.message.reply_text(cfg.Txt.deleted)
+
+    return END
+
+
 async def edit(update: Update, context) -> str:
     msg = update.message
+    user_data = context.user_data
 
     rm = ReplyKeyboardRemove()
     if msg.text == cfg.Btn.advert_fields["distinct"]:
@@ -186,7 +236,7 @@ async def edit(update: Update, context) -> str:
         await msg.reply_text(cfg.Txt.ask_contact, reply_markup=rm)
         return CONTACT
     elif msg.text == cfg.Btn.advert_fields["photo"]:
-        context.user_data[BUCKET_KEY][PHOTO] = []
+        user_data[BUCKET_KEY][PHOTO] = []
         await msg.reply_text(cfg.Txt.ask_photo, reply_markup=rm)
         return PHOTO
 
@@ -214,9 +264,9 @@ photo_value_error = _error(cfg.Txt.photo_value_error)
 
 
 post_advert_conv = ConversationHandler(
-    entry_points=[  # type: ignore
-        CommandHandler(cfg.Cmd.post_advert, post_advert),  # type: ignore
-        CommandHandler(cfg.Cmd.my_adverts, my_adverts),  # type: ignore
+    entry_points=[
+        CommandHandler(cfg.Cmd.post_advert, post_advert),
+        CommandHandler(cfg.Cmd.my_adverts, my_adverts),
     ],
     states={  # type: ignore
         DISTINCT: [
@@ -278,6 +328,15 @@ post_advert_conv = ConversationHandler(
                 edit,
             ),
             MessageHandler(~filters.COMMAND, text_value_error),
+        ],
+        MY_ADVERTS: [
+            MessageHandler(
+                filters.Regex(f"^\\/{cfg.Cmd.edit}[0-9]$"), choose_edit_advert
+            ),
+            MessageHandler(
+                filters.Regex(f"^\\/{cfg.Cmd.delete}[0-9]$"),
+                choose_delete_advert,
+            ),
         ],
     },
     fallbacks=[CommandHandler(cfg.Cmd.cancel, cancel)],

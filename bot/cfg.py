@@ -3,11 +3,26 @@ from dataclasses import dataclass
 from bot import entity
 
 
+DISTINCT = "distinct"
+STREET = "street"
+BUILDING_TYPE = "building_type"
+FLOOR = "floor"
+SQUARE = "square"
+NUM_OF_ROOMS = "num_of_rooms"
+LAYOUT = "layout"
+DESCRIPTION = "description"
+SETTLEMENT_DATE = "settlement_date"
+PRICE = "price"
+CONTACT = "contact"
+PHOTO = "photo"
+
+
 @dataclass(slots=True)
 class BotCommand:
     start = "start"
     post_advert = "post_advert"
     my_adverts = "my_adverts"
+    search = "search"
 
     done = "done"
     cancel = "cancel"
@@ -31,25 +46,25 @@ class BotButton:
         "ne_novobudova": "не новобудова (чешка, хрущовка, тощо)",
     }
     advert_fields = {
-        "distinct": "Район",
-        "street": "Вулиця",
-        "building_type": "Тип будинку",
-        "floor": "Поверх",
-        "square": "Площа",
-        "num_of_rooms": "Кількість кімнат",
-        "layout": "Планування",
-        "description": "Опис",
-        "settlement_date": "Дата можливого заселення",
-        "price": "Ціна",
-        "contact": "Контактні дані",
-        "photo": "Фото",
+        DISTINCT: "Район",
+        STREET: "Вулиця",
+        BUILDING_TYPE: "Тип будинку",
+        FLOOR: "Поверх",
+        SQUARE: "Площа",
+        NUM_OF_ROOMS: "Кількість кімнат",
+        LAYOUT: "Планування",
+        DESCRIPTION: "Опис",
+        SETTLEMENT_DATE: "Дата можливого заселення",
+        PRICE: "Ціна",
+        CONTACT: "Контактні дані",
+        PHOTO: "Фото",
     }
     filter_fields = {
-        "distinct": "Район",
-        "building_type": "Тип будинку",
-        "floor": "Поверх",
-        "num_of_rooms": "Кількість кімнат",
-        "price": "Ціна",
+        DISTINCT: advert_fields[DISTINCT],
+        BUILDING_TYPE: advert_fields[BUILDING_TYPE],
+        FLOOR: advert_fields[FLOOR],
+        NUM_OF_ROOMS: advert_fields[NUM_OF_ROOMS],
+        PRICE: advert_fields[PRICE],
     }
     cb_filter_all = "all"
     cb_filter_back = "back"
@@ -127,6 +142,7 @@ class BotText:
     choose_edit_field = "Оберіть поле для редагування"
 
     text_value_error = "🔴 Будь-ласка введіть текст"
+    number_value_error = "🔴 Будь-ласка введіть число"
     select_value_error = (
         "🔴 Будь-ласка оберіть елемент зі списку або введіть "
         f"/{BotCommand.cancel} для відміни."

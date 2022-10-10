@@ -70,9 +70,20 @@ class Advert(BaseEntity):
 
 @dataclass(slots=True, kw_only=True)
 class AdvertFilter:
-    distinct: list = field(default_factory=list)
-    building_type: list = field(default_factory=list)
-    floor: list = field(default_factory=list)
-    num_of_rooms: list = field(default_factory=list)
-    price: list = field(default_factory=list)
+    distinct: list
+    building_type: list
+    floor: list
+    num_of_rooms: list
+    price: list
     status: AdvertStatusEnum = AdvertStatusEnum.APPROVED
+
+    @staticmethod
+    def from_dict(d: dict):
+        res = {
+            "distinct": d["distinct"],
+            "building_type": d["building_type"],
+            "floor": [int(i) for i in d["floor"]],
+            "num_of_rooms": [int(i) for i in d["num_of_rooms"]],
+            "price": [int(i) for i in d["price"]]
+        }
+        return AdvertFilter(**res)

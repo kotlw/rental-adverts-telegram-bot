@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from telegram import Update
-from telegram import InlineKeyboardMarkup
+from telegram import InlineKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import CommandHandler
 from telegram.ext import ConversationHandler
 from telegram.ext import CallbackQueryHandler
@@ -9,29 +9,22 @@ from telegram.constants import ParseMode
 
 from bot import app, cfg, helpers, entity
 from bot.repository import repo
+from bot.cfg import DISTINCT, BUILDING_TYPE, FLOOR, NUM_OF_ROOMS, PRICE
 
-FILTER = "filter"
-SELECTED = "selected"
-NUMBER_ENTER_STATE = "number_enter_state"
 
 END = ConversationHandler.END
-CHOOSE_FILTER = "choose_filter"
-CATEGORY_FILTER = "category_filter"
-NUMBER_FILTER = "number_filter"
-NUMBER_ENTER = "number_enter"
-DISTINCT = "distinct"
-BUILDING_TYPE = "building_type"
-FLOOR = "floor"
-NUM_OF_ROOMS = "num_of_rooms"
-PRICE = "price"
+(
+    FILTER,
+    SELECTED,
+    CHOOSE_FILTER,
+    CATEGORY_FILTER,
+    NUMBER_FILTER,
+    NUMBER_ENTER,
+    NUMBER_ENTER_STATE,
+) = range(7)
 
 
-async def cancel(update: Update, _) -> int:
-    await update.message.reply_text(cfg.Txt.canceled)
-    return END
-
-
-async def search(update: Update, context) -> str:
+async def search(update: Update, context) -> int:
     user_data = context.user_data
 
     user_data[FILTER] = user_data.get(FILTER, defaultdict(list))
@@ -51,9 +44,8 @@ async def search(update: Update, context) -> str:
         query = update.callback_query
         await query.answer()
         await query.edit_message_text(**args)
-        return CHOOSE_FILTER
-
-    await update.message.reply_text(**args)
+    else:
+        await update.message.reply_text(**args)
 
     return CHOOSE_FILTER
 
@@ -64,25 +56,14 @@ async def choose_filter(update: Update, context) -> str | int:
 
     await query.answer()
 
-    if query.data == DISTINCT:
-        user_data[SELECTED] = DISTINCT
+    user_data[SELECTED] = query.data
+    if query.data in [DISTINCT, BUILDING_TYPE]:
         return await category_filter(update, context)
-    elif query.data == BUILDING_TYPE:
-        user_data[SELECTED] = BUILDING_TYPE
-        return await category_filter(update, context)
-    elif query.data == FLOOR:
-        user_data[SELECTED] = FLOOR
-        return await number_filter(update, context)
-    elif query.data == NUM_OF_ROOMS:
-        user_data[SELECTED] = NUM_OF_ROOMS
-        return await number_filter(update, context)
-    elif query.data == PRICE:
-        user_data[SELECTED] = PRICE
+    elif query.data in [FLOOR, NUM_OF_ROOMS, PRICE]:
         return await number_filter(update, context)
     elif query.data == cfg.Btn.cb_filter_search:
         user_data[SELECTED] = None
         return await filter_search(update, context)
-
 
     return CHOOSE_FILTER
 
@@ -93,7 +74,7 @@ async def filter_search(update: Update, context) -> str | int:
     user_data = context.user_data
     filter_data = user_data[FILTER]
 
-    fltr = entity.AdvertFilter(**filter_data)
+    fltr = entity.AdvertFilter.from_dict(filter_data)
     adverts = await repo.advert.get_by_filter(fltr)
 
     if not adverts:
@@ -107,7 +88,7 @@ async def filter_search(update: Update, context) -> str | int:
     return END
 
 
-async def filter_all(update: Update, context) -> str:
+async def filter_all(update: Update, context) -> int:
     query = update.callback_query
     user_data = context.user_data
     filter_data = user_data[FILTER]
@@ -121,7 +102,7 @@ async def filter_all(update: Update, context) -> str:
     return await search(update, context)
 
 
-async def category_filter(update: Update, context) -> str:
+async def category_filter(update: Update, context) -> int:
     query = update.callback_query
     user_data = context.user_data
     filter_data = user_data[FILTER]
@@ -157,7 +138,7 @@ async def category_filter(update: Update, context) -> str:
     return CATEGORY_FILTER
 
 
-async def number_filter(update: Update, context) -> str:
+async def number_filter(update: Update, context) -> int | str:
     query = update.callback_query
     user_data = context.user_data
 
@@ -186,7 +167,7 @@ async def number_filter(update: Update, context) -> str:
     return NUMBER_FILTER
 
 
-async def number_enter(update: Update, context) -> str:
+async def number_enter(update: Update, context) -> int:
     query = update.callback_query
     user_data = context.user_data
     filter_data = user_data[FILTER]
@@ -232,8 +213,14 @@ async def number_enter(update: Update, context) -> str:
     return NUMBER_ENTER
 
 
+async def cancel(update: Update, _) -> int:
+    rm = ReplyKeyboardRemove()
+    await update.message.reply_text(cfg.Txt.canceled, reply_markup=rm)
+    return END
+
+
 search_conversation = ConversationHandler(
-    entry_points=[CommandHandler("search", search)],  # type: ignore
+    entry_points=[CommandHandler(cfg.Cmd.search, search)],
     states={  # type: ignore
         CHOOSE_FILTER: [
             CallbackQueryHandler(choose_filter, pattern="^.*$"),
@@ -259,7 +246,7 @@ search_conversation = ConversationHandler(
             CallbackQueryHandler(number_enter, pattern="^.*$"),
         ],
     },
-    fallbacks=[CommandHandler("cancel", cancel)],
+    fallbacks=[CommandHandler(cfg.Cmd.cancel, cancel)],
 )
 
 app.add_handler(search_conversation)

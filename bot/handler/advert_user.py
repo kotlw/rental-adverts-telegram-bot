@@ -9,26 +9,23 @@ from telegram.ext import (
 
 from bot import app, entity, cfg, helpers
 from bot.repository import repo
-
-BUCKET_KEY = "advert"
-ADVERTS = "adverts"
+from bot.cfg import (
+    DISTINCT,
+    STREET,
+    BUILDING_TYPE,
+    FLOOR,
+    SQUARE,
+    NUM_OF_ROOMS,
+    LAYOUT,
+    DESCRIPTION,
+    SETTLEMENT_DATE,
+    PRICE,
+    CONTACT,
+    PHOTO,
+)
 
 END = ConversationHandler.END
-DISTINCT = "distinct"
-STREET = "street"
-BUILDING_TYPE = "building_type"
-FLOOR = "floor"
-SQUARE = "square"
-NUM_OF_ROOMS = "num_of_rooms"
-LAYOUT = "layout"
-DESCRIPTION = "description"
-SETTLEMENT_DATE = "settlement_date"
-PRICE = "price"
-CONTACT = "contact"
-PHOTO = "photo"
-OVERVIEW = "overview"
-EDIT = "edit"
-MY_ADVERTS = "my_adverts"
+BUCKET_KEY, ADVERTS, OVERVIEW, EDIT, MY_ADVERTS_OVERVIEW = range(5)
 
 
 async def post_advert(update: Update, context) -> str:
@@ -66,13 +63,13 @@ async def my_adverts(update: Update, context) -> int | str:
 
         await msg.reply_media_group(media)
 
-    return MY_ADVERTS
+    return MY_ADVERTS_OVERVIEW
 
 
 def _callback(
     state: str, text: str, reply_markup: ReplyMarkup, next_state: str
 ):
-    async def callback(update: Update, context) -> str:
+    async def callback(update: Update, context) -> int | str:
         msg = update.message
         user_data = context.user_data
 
@@ -108,7 +105,7 @@ price = _callback(PRICE, cfg.Txt.ask_contact, _rm_remove, CONTACT)
 contact = _callback(CONTACT, cfg.Txt.ask_photo, _rm_remove, PHOTO)
 
 
-async def photo(update: Update, context) -> str:
+async def photo(update: Update, context) -> int | str:
     msg = update.message
     user_data = context.user_data
 
@@ -124,7 +121,7 @@ async def photo(update: Update, context) -> str:
     return PHOTO
 
 
-async def overview(update: Update, context) -> str:
+async def overview(update: Update, context) -> int | str:
     msg = update.message
     user_data = context.user_data
 
@@ -157,7 +154,7 @@ async def submit(update: Update, context) -> int:
     return END
 
 
-async def choose_edit_field(update: Update, context) -> str:
+async def choose_edit_field(update: Update, context) -> int | str:
     msg = update.message
     user_data = context.user_data
 
@@ -198,49 +195,50 @@ async def choose_delete_advert(update: Update, context) -> int:
     return END
 
 
-async def edit(update: Update, context) -> str:
+async def edit(update: Update, context) -> int | str:
     msg = update.message
     user_data = context.user_data
 
     rm = ReplyKeyboardRemove()
-    if msg.text == cfg.Btn.advert_fields["distinct"]:
+
+    if msg.text == cfg.Btn.advert_fields[DISTINCT]:
         kb = helpers.prepare_keyboard(cfg.Btn.distinct_fields)
         rm = ReplyKeyboardMarkup(kb)
         await msg.reply_text(cfg.Txt.ask_distinct, reply_markup=rm)
         return DISTINCT
-    elif msg.text == cfg.Btn.advert_fields["street"]:
+    elif msg.text == cfg.Btn.advert_fields[STREET]:
         await msg.reply_text(cfg.Txt.ask_street, reply_markup=rm)
         return STREET
-    elif msg.text == cfg.Btn.advert_fields["building_type"]:
+    elif msg.text == cfg.Btn.advert_fields[BUILDING_TYPE]:
         kb = helpers.prepare_keyboard(cfg.Btn.building_type_fields)
         rm = ReplyKeyboardMarkup(kb)
         await msg.reply_text(cfg.Txt.ask_building_type, reply_markup=rm)
         return BUILDING_TYPE
-    elif msg.text == cfg.Btn.advert_fields["floor"]:
+    elif msg.text == cfg.Btn.advert_fields[FLOOR]:
         await msg.reply_text(cfg.Txt.ask_floor, reply_markup=rm)
         return FLOOR
-    elif msg.text == cfg.Btn.advert_fields["square"]:
+    elif msg.text == cfg.Btn.advert_fields[SQUARE]:
         await msg.reply_text(cfg.Txt.ask_square, reply_markup=rm)
         return SQUARE
-    elif msg.text == cfg.Btn.advert_fields["num_of_rooms"]:
+    elif msg.text == cfg.Btn.advert_fields[NUM_OF_ROOMS]:
         await msg.reply_text(cfg.Txt.ask_num_of_rooms, reply_markup=rm)
         return NUM_OF_ROOMS
-    elif msg.text == cfg.Btn.advert_fields["layout"]:
+    elif msg.text == cfg.Btn.advert_fields[LAYOUT]:
         await msg.reply_text(cfg.Txt.ask_layout, reply_markup=rm)
         return LAYOUT
-    elif msg.text == cfg.Btn.advert_fields["description"]:
+    elif msg.text == cfg.Btn.advert_fields[DESCRIPTION]:
         await msg.reply_text(cfg.Txt.ask_description, reply_markup=rm)
         return DESCRIPTION
-    elif msg.text == cfg.Btn.advert_fields["settlement_date"]:
+    elif msg.text == cfg.Btn.advert_fields[SETTLEMENT_DATE]:
         await msg.reply_text(cfg.Txt.ask_settlement_date, reply_markup=rm)
         return SETTLEMENT_DATE
-    elif msg.text == cfg.Btn.advert_fields["price"]:
+    elif msg.text == cfg.Btn.advert_fields[PRICE]:
         await msg.reply_text(cfg.Txt.ask_price, reply_markup=rm)
         return PRICE
-    elif msg.text == cfg.Btn.advert_fields["contact"]:
+    elif msg.text == cfg.Btn.advert_fields[CONTACT]:
         await msg.reply_text(cfg.Txt.ask_contact, reply_markup=rm)
         return CONTACT
-    elif msg.text == cfg.Btn.advert_fields["photo"]:
+    elif msg.text == cfg.Btn.advert_fields[PHOTO]:
         user_data[BUCKET_KEY][PHOTO] = []
         await msg.reply_text(cfg.Txt.ask_photo, reply_markup=rm)
         return PHOTO
@@ -263,6 +261,7 @@ def _error(msg: str):
 
 select_value_error = _error(cfg.Txt.select_value_error)
 text_value_error = _error(cfg.Txt.text_value_error)
+number_value_error = _error(cfg.Txt.number_value_error)
 floor_value_error = _error(cfg.Txt.floor_value_error)
 num_of_rooms_value_error = _error(cfg.Txt.num_of_rooms_value_error)
 date_value_error = _error(cfg.Txt.date_value_error)
@@ -297,8 +296,8 @@ advert_user_conv = ConversationHandler(
             MessageHandler(~filters.COMMAND, floor_value_error),
         ],
         SQUARE: [
-            MessageHandler(filters.ALL, square),
-            MessageHandler(~filters.COMMAND, text_value_error),
+            MessageHandler(filters.Regex("^[1-9][0-9]*$"), square),
+            MessageHandler(~filters.COMMAND, number_value_error),
         ],
         NUM_OF_ROOMS: [
             MessageHandler(filters.Regex("^[1-6]$"), num_of_rooms),
@@ -317,8 +316,8 @@ advert_user_conv = ConversationHandler(
             MessageHandler(~filters.COMMAND, date_value_error),
         ],
         PRICE: [
-            MessageHandler(filters.ALL, price),
-            MessageHandler(~filters.COMMAND, text_value_error),
+            MessageHandler(filters.Regex("^[1-9][0-9]*$"), price),
+            MessageHandler(~filters.COMMAND, number_value_error),
         ],
         CONTACT: [
             MessageHandler(filters.ALL, contact),
@@ -340,7 +339,7 @@ advert_user_conv = ConversationHandler(
             ),
             MessageHandler(~filters.COMMAND, text_value_error),
         ],
-        MY_ADVERTS: [
+        MY_ADVERTS_OVERVIEW: [
             MessageHandler(
                 filters.Regex(f"^\\/{cfg.Cmd.edit}[0-9]$"), choose_edit_advert
             ),

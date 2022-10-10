@@ -54,6 +54,41 @@ class AdvertRepository(base.BaseRepository):
 
         return adverts
 
+    async def get_by_filter(
+        self, filter_: entity.AdvertFilter
+    ) -> list[entity.Advert]:
+
+        async with self.async_session() as session:
+            stmt = select(AdvertModel)
+            stmt = stmt.where(AdvertModel.status == filter_.status)
+
+            if filter_.distinct:
+                stmt = stmt.where(AdvertModel.distinct.in_(filter_.distinct))
+
+            if filter_.building_type:
+                stmt = stmt.where(
+                    AdvertModel.building_type.in_(filter_.building_type)
+                )
+
+            if filter_.floor:
+                stmt = stmt.where(AdvertModel.floor.between(*filter_.floor))
+
+            if filter_.num_of_rooms:
+                stmt = stmt.where(
+                    AdvertModel.num_of_rooms.between(*filter_.num_of_rooms)
+                )
+
+            if filter_.price:
+                stmt = stmt.where(AdvertModel.price.between(*filter_.price))
+
+            adverts = await session.execute(stmt)
+            adverts = [self._to_entity(p[0]) for p in adverts.all()]
+            await session.commit()
+
+        await self.engine.dispose()
+
+        return adverts
+
     def _from_entity(self, entity_: entity.Advert) -> AdvertModel:
         return AdvertModel(
             id=entity_.id,

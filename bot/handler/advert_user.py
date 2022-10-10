@@ -1,4 +1,4 @@
-from telegram import ReplyKeyboardRemove, Update
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
 from telegram._utils.types import ReplyMarkup
 from telegram.ext import (
     CommandHandler,
@@ -38,7 +38,8 @@ async def post_advert(update: Update, context) -> str:
     user_data[EDIT] = False
     user_data[BUCKET_KEY] = {"user_id": msg.chat.id}
 
-    rm = helpers.create_reply_markup(cfg.Btn.distincts, 2)
+    kb = helpers.prepare_keyboard(cfg.Btn.distinct_fields, 2)
+    rm = ReplyKeyboardMarkup(kb)
     await msg.reply_text(cfg.Txt.post_advert)
     await msg.reply_text(cfg.Txt.ask_distinct, reply_markup=rm)
 
@@ -89,7 +90,8 @@ def _callback(
 
 _rm_remove = ReplyKeyboardRemove()
 distinct = _callback(DISTINCT, cfg.Txt.ask_street, _rm_remove, STREET)
-_rm = helpers.create_reply_markup(cfg.Btn.building_types)
+_kb = helpers.prepare_keyboard(cfg.Btn.building_type_fields)
+_rm = ReplyKeyboardMarkup(_kb)
 street = _callback(STREET, cfg.Txt.ask_building_type, _rm, BUILDING_TYPE)
 building_type = _callback(BUILDING_TYPE, cfg.Txt.ask_floor, _rm_remove, FLOOR)
 floor = _callback(FLOOR, cfg.Txt.ask_square, _rm_remove, SQUARE)
@@ -137,7 +139,7 @@ async def overview(update: Update, context) -> str:
     await msg.reply_text(cfg.Txt.advert_overview, reply_markup=rm)
 
     advert = entity.Advert.from_dict(data)
-    hints = {**cfg.Btn.edit, **cfg.Btn.submit}
+    hints = {**cfg.Btn.edit, **cfg.Btn.submit, **cfg.Btn.cancel}
     media = helpers.create_advert_media_group(advert, command_hints=hints)
     await msg.reply_media_group(media)
 
@@ -161,7 +163,8 @@ async def choose_edit_field(update: Update, context) -> str:
 
     user_data[EDIT] = True
 
-    rm = helpers.create_reply_markup(list(cfg.Btn.advert_fields.values()))
+    kb = helpers.prepare_keyboard(cfg.Btn.advert_fields)
+    rm = ReplyKeyboardMarkup(kb)
     await msg.reply_text(cfg.Txt.choose_edit_field, reply_markup=rm)
 
     return EDIT
@@ -201,14 +204,16 @@ async def edit(update: Update, context) -> str:
 
     rm = ReplyKeyboardRemove()
     if msg.text == cfg.Btn.advert_fields["distinct"]:
-        rm = helpers.create_reply_markup(cfg.Btn.distincts)
+        kb = helpers.prepare_keyboard(cfg.Btn.distinct_fields)
+        rm = ReplyKeyboardMarkup(kb)
         await msg.reply_text(cfg.Txt.ask_distinct, reply_markup=rm)
         return DISTINCT
     elif msg.text == cfg.Btn.advert_fields["street"]:
         await msg.reply_text(cfg.Txt.ask_street, reply_markup=rm)
         return STREET
     elif msg.text == cfg.Btn.advert_fields["building_type"]:
-        rm = helpers.create_reply_markup(cfg.Btn.building_types)
+        kb = helpers.prepare_keyboard(cfg.Btn.building_type_fields)
+        rm = ReplyKeyboardMarkup(kb)
         await msg.reply_text(cfg.Txt.ask_building_type, reply_markup=rm)
         return BUILDING_TYPE
     elif msg.text == cfg.Btn.advert_fields["floor"]:
@@ -244,7 +249,8 @@ async def edit(update: Update, context) -> str:
 
 
 async def cancel(update: Update, _) -> int:
-    await update.message.reply_text(cfg.Txt.canceled)
+    rm = ReplyKeyboardRemove()
+    await update.message.reply_text(cfg.Txt.canceled, reply_markup=rm)
     return END
 
 
@@ -263,14 +269,16 @@ date_value_error = _error(cfg.Txt.date_value_error)
 photo_value_error = _error(cfg.Txt.photo_value_error)
 
 
-post_advert_conv = ConversationHandler(
+advert_user_conv = ConversationHandler(
     entry_points=[
         CommandHandler(cfg.Cmd.post_advert, post_advert),
         CommandHandler(cfg.Cmd.my_adverts, my_adverts),
     ],
     states={  # type: ignore
         DISTINCT: [
-            MessageHandler(filters.Text(cfg.Btn.distincts), distinct),
+            MessageHandler(
+                filters.Text(list(cfg.Btn.distinct_fields.values())), distinct
+            ),
             MessageHandler(~filters.COMMAND, select_value_error),
         ],
         STREET: [
@@ -278,7 +286,10 @@ post_advert_conv = ConversationHandler(
             MessageHandler(~filters.COMMAND, text_value_error),
         ],
         BUILDING_TYPE: [
-            MessageHandler(filters.Text(cfg.Btn.building_types), building_type),
+            MessageHandler(
+                filters.Text(list(cfg.Btn.building_type_fields.values())),
+                building_type,
+            ),
             MessageHandler(~filters.COMMAND, select_value_error),
         ],
         FLOOR: [
@@ -342,4 +353,4 @@ post_advert_conv = ConversationHandler(
     fallbacks=[CommandHandler(cfg.Cmd.cancel, cancel)],
 )
 
-app.add_handler(post_advert_conv)
+app.add_handler(advert_user_conv)

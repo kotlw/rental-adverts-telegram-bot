@@ -18,15 +18,18 @@ class BotCommand:
 
 @dataclass(slots=True)
 class BotButton:
-    distincts = [
-        "Галицький",
-        "Залізничний",
-        "Личаківський",
-        "Франківський",
-        "Шевченківський",
-        "Сихівський",
-    ]
-    building_types = ["новобудова", "не новобудова (чешка, хрущовка, тощо)"]
+    distinct_fields = {
+        "galyckyi": "Галицький",
+        "zaliznychnyi": "Залізничний",
+        "lychakivskyi": "Личаківський",
+        "frankivskyi": "Франківський",
+        "shevchenkivskyi": "Шевченківський",
+        "syhivskyi": "Сихівський",
+    }
+    building_type_fields = {
+        "novobudova": "новобудова",
+        "ne_novobudova": "не новобудова (чешка, хрущовка, тощо)",
+    }
     advert_fields = {
         "distinct": "Район",
         "street": "Вулиця",
@@ -41,7 +44,43 @@ class BotButton:
         "contact": "Контактні дані",
         "photo": "Фото",
     }
+    filter_fields = {
+        "distinct": "Район",
+        "building_type": "Тип будинку",
+        "floor": "Поверх",
+        "num_of_rooms": "Кількість кімнат",
+        "price": "Ціна",
+    }
+    cb_filter_all = "all"
+    cb_filter_back = "back"
+    cb_filter_num_from = "from"
+    cb_filter_num_to = "to"
+    cb_num_del = "del"
+    cb_filter_search = "filter_search"
+    filter_from = {cb_filter_num_from: "Від"}
+    filter_to = {cb_filter_num_to: "До"}
+    filter_back = {cb_filter_back: "Повернутись"}
+    filter_search = {cb_filter_search: "Пошук"}
+    filter_distinct_all = {cb_filter_all: "Будь-який"}
+    filter_building_type_all = {cb_filter_all: "Будь-який"}
+    filter_num_of_rooms_all = {cb_filter_all: "Будь-яка"}
+    filter_floor_all = {cb_filter_all: "Будь-який"}
+    filter_price_all = {cb_filter_all: "Будь-яка"}
+    nums = {
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5",
+        "6": "6",
+        "7": "7",
+        "8": "8",
+        "9": "9",
+    }
+    nums_nav = {"0": "0", cb_num_del: "<-"}
+
     submit = {BotCommand.submit: "відправити"}
+    cancel = {BotCommand.cancel: "відмінити"}
     edit = {BotCommand.edit: "редагувати"}
     delete = {BotCommand.delete: "видалити"}
 
@@ -114,6 +153,7 @@ class BotText:
     cant_edit = "🔴 Нажаль, не можна редагувати опубліковані оголошення."
     advert_overview = "Так виглядає ваше оголошення: "
     no_user_adverts_found = "У вас ще немає створених оголошень"
+    no_search_adverts_found = "За вашим запитом нічого не знайдено"
 
     submit_advert = (
         "🟢 Дякую, що подали заявку на публікацію житла. Ми розглянемо Ваше "
@@ -155,6 +195,43 @@ class BotText:
         )
 
         return caption
+
+    @staticmethod
+    def filter_msg(data: dict) -> str:
+
+        all_key = BotButton.cb_filter_all
+
+        distinct = BotButton.filter_distinct_all[all_key]
+        if data.get("distinct"):
+            distinct = ", ".join(data["distinct"])
+
+        building_type = BotButton.filter_building_type_all[all_key]
+        if data.get("building_type"):
+            building_type = ", ".join(data["building_type"])
+
+        floor = BotButton.filter_floor_all[all_key]
+        if data.get("floor"):
+            floor = f"від {data['floor'][0]} до {data['floor'][1]}"
+
+        price = BotButton.filter_price_all[all_key]
+        if data.get("price"):
+            price = f"від {data['price'][0]} до {data['price'][1]}"
+
+        num_of_rooms = BotButton.filter_num_of_rooms_all[all_key]
+        if data.get("num_of_rooms"):
+            num_of_rooms = (
+                f"від {data['num_of_rooms'][0]} до {data['num_of_rooms'][1]}"
+            )
+
+        msg = (
+            f"<b>Район:</b> {distinct}\n"
+            f"<b>Тип будинку:</b> {building_type}\n"
+            f"<b>Поверх:</b> {floor}\n"
+            f"<b>Ціна:</b> {price}\n"
+            f"<b>Кількість кімнат:</b> {num_of_rooms}\n"
+        )
+
+        return msg
 
 
 date_format = "%d.%m.%y"

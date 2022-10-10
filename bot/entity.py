@@ -2,8 +2,8 @@ import abc
 from enum import Enum
 from typing import Dict
 from uuid import UUID, uuid4
-from datetime import date, datetime
-from dataclasses import dataclass, asdict
+from datetime import datetime
+from dataclasses import dataclass, asdict, field
 
 
 class AdvertStatusEnum(Enum):
@@ -67,3 +67,12 @@ class Advert(BaseEntity):
             res["status"] = d["status"]
             res["create_date"] = d["create_date"]
         return Advert(**res)
+
+@dataclass(slots=True, kw_only=True)
+class AdvertFilter:
+    distinct: list = field(default_factory=list)
+    building_type: list = field(default_factory=list)
+    floor: list = field(default_factory=list)
+    num_of_rooms: list = field(default_factory=list)
+    price: list = field(default_factory=list)
+    status: AdvertStatusEnum = AdvertStatusEnum.APPROVED

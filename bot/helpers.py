@@ -39,13 +39,13 @@ def create_advert_media_group(
 
 
 def create_reply_markup(
-    items: list[str], cols: int = 1, is_inline: bool = False
-) -> ReplyMarkup:
+    items: dict[str, str], cols: int = 1, is_inline: bool = False
+) -> InlineKeyboardMarkup:
 
     result = []
     bucket = []
 
-    for k, v in dict(enumerate(items)).items():
+    for k, v in items.items():
         if len(bucket) == cols:
             result.append(bucket)
             bucket = []
@@ -58,6 +58,27 @@ def create_reply_markup(
 
     wrapper = InlineKeyboardMarkup if is_inline else ReplyKeyboardMarkup
     return wrapper(result)
+
+
+def prepare_keyboard(
+    items: dict[str, str], cols: int = 1, is_inline: bool = False
+) -> list:
+
+    result = []
+    bucket = []
+
+    for k, v in items.items():
+        if len(bucket) == cols:
+            result.append(bucket)
+            bucket = []
+
+        b = InlineKeyboardButton(v, callback_data=str(k)) if is_inline else v
+        bucket.append(b)
+
+    if bucket:
+        result.append(bucket)
+
+    return result
 
 
 class CustomFilters:

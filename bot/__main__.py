@@ -1,9 +1,5 @@
-from bot import app
-
-from .handler import start
-from .handler import post_edit_show_advert
-from .handler import search
-from .handler import review
+from bot import app, BOT_TOKEN, BOT_WEBHOOK_URL, BOT_PORT
+from .handler import start, post_edit_show_advert, search, review
 
 
 # this is to handle unused import warning
@@ -11,4 +7,9 @@ __all__ = ["start", "post_edit_show_advert", "search", "review"]
 
 
 if __name__ == "__main__":
-    app.run_polling()
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=BOT_PORT,
+        url_path=BOT_TOKEN,
+        webhook_url=BOT_WEBHOOK_URL + BOT_TOKEN,
+    )

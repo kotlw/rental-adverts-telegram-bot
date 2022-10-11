@@ -4,6 +4,7 @@ import logging
 
 from telegram.ext import ApplicationBuilder
 
+PROD = False
 
 logging_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(format=logging_format, level=logging.INFO)

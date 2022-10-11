@@ -1,9 +1,13 @@
-from bot import app, BOT_TOKEN, BOT_WEBHOOK_URL, PORT
+from bot import app, BOT_TOKEN, BOT_WEBHOOK_URL, PORT, PROD
 from .handler import start, post_edit_show_advert, search, review
+
+if not PROD:
+    from .handler import init_db
+
 
 
 # this is to handle unused import warning
-__all__ = ["start", "post_edit_show_advert", "search", "review"]
+__all__ = ["start", "post_edit_show_advert", "search", "review", "init_db"]
 
 
 if __name__ == "__main__":

@@ -23,12 +23,14 @@ class BotCommand:
     post_advert = "post_advert"
     my_adverts = "my_adverts"
     search = "search"
+    review = "review"
 
     done = "done"
     cancel = "cancel"
     submit = "submit"
     edit = "edit"
     delete = "delete"
+    approve = "approve"
 
 
 @dataclass(slots=True)
@@ -66,21 +68,16 @@ class BotButton:
         NUM_OF_ROOMS: advert_fields[NUM_OF_ROOMS],
         PRICE: advert_fields[PRICE],
     }
-    cb_filter_all = "all"
-    cb_filter_back = "back"
-    cb_filter_num_from = "from"
-    cb_filter_num_to = "to"
-    cb_num_del = "del"
-    cb_filter_search = "filter_search"
-    filter_from = {cb_filter_num_from: "Від"}
-    filter_to = {cb_filter_num_to: "До"}
-    filter_back = {cb_filter_back: "Повернутись"}
-    filter_search = {cb_filter_search: "Пошук"}
-    filter_distinct_all = {cb_filter_all: "Будь-який"}
-    filter_building_type_all = {cb_filter_all: "Будь-який"}
-    filter_num_of_rooms_all = {cb_filter_all: "Будь-яка"}
-    filter_floor_all = {cb_filter_all: "Будь-який"}
-    filter_price_all = {cb_filter_all: "Будь-яка"}
+    filter_num_from = {"filter_num_from": "Від"}
+    filter_num_to = {"filter_num_to": "До"}
+    filter_back = {"filter_back": "Повернутись"}
+    filter_search = {"filter_search": "Пошук"}
+    filter_all = {"filter_all": "Всі"}
+    filter_distinct_all = {[*filter_all.keys()][0]: "Будь-який"}
+    filter_building_type_all = {[*filter_all.keys()][0]: "Будь-який"}
+    filter_num_of_rooms_all = {[*filter_all.keys()][0]: "Будь-яка"}
+    filter_floor_all = {[*filter_all.keys()][0]: "Будь-який"}
+    filter_price_all = {[*filter_all.keys()][0]: "Будь-яка"}
     nums = {
         "1": "1",
         "2": "2",
@@ -92,12 +89,14 @@ class BotButton:
         "8": "8",
         "9": "9",
     }
-    nums_nav = {"0": "0", cb_num_del: "<-"}
+    num_del = {"filter_num_del": "<-"}
+    nums_nav = {"0": "0", **num_del}
 
     submit = {BotCommand.submit: "відправити"}
     cancel = {BotCommand.cancel: "відмінити"}
     edit = {BotCommand.edit: "редагувати"}
     delete = {BotCommand.delete: "видалити"}
+    approve = {BotCommand.approve: "затвердити"}
 
 
 @dataclass(slots=True)
@@ -138,6 +137,7 @@ class BotText:
 
     canceled = "🟢 Відмінено."
     deleted = "🟢 Оголошення видалено."
+    approved = "🟢 Затверджено"
 
     choose_edit_field = "Оберіть поле для редагування"
 
@@ -170,12 +170,18 @@ class BotText:
     advert_overview = "Так виглядає ваше оголошення: "
     no_user_adverts_found = "У вас ще немає створених оголошень"
     no_search_adverts_found = "За вашим запитом нічого не знайдено"
+    no_pending_adverts_found = "Наразі оголошень для перевірки немає"
 
     submit_advert = (
         "🟢 Дякую, що подали заявку на публікацію житла. Ми розглянемо Ваше "
         "оголошення й у разі позитивного рішення опублікуємо його у каналі. "
         "Якщо в оголошенні не буде виявлено помилок, воно отримає статус "
         "опубліковано."
+    )
+    review_command_eror = (
+        "🔴 Будь-ласка скористайтесь командами "
+        f"/{BotCommand.approve}, /{BotCommand.delete}, "
+        f"або введіть /{BotCommand.cancel} для відміни."
     )
 
     @staticmethod
@@ -215,7 +221,7 @@ class BotText:
     @staticmethod
     def filter_msg(data: dict) -> str:
 
-        all_key = BotButton.cb_filter_all
+        all_key = [*BotButton.filter_all.keys()][0]
 
         distinct = BotButton.filter_distinct_all[all_key]
         if data.get("distinct"):

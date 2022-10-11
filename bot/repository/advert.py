@@ -41,10 +41,25 @@ class AdvertModel(base.BaseModel):
 class AdvertRepository(base.BaseRepository):
     model = AdvertModel
 
-    async def get_user_posts(self, user_id: int) -> list[entity.Advert]:
+    async def get_user_adverts(self, user_id: int) -> list[entity.Advert]:
 
         async with self.async_session() as session:
             stmt = select(AdvertModel).where(AdvertModel.user_id == user_id)
+            adverts = await session.execute(stmt)
+
+            adverts = [self._to_entity(p[0]) for p in adverts.all()]
+            await session.commit()
+
+        await self.engine.dispose()
+
+        return adverts
+
+    async def get_pending_adverts(self) -> list[entity.Advert]:
+
+        async with self.async_session() as session:
+            stmt = select(AdvertModel).where(
+                AdvertModel.status == entity.AdvertStatusEnum.PENDING
+            )
             adverts = await session.execute(stmt)
 
             adverts = [self._to_entity(p[0]) for p in adverts.all()]

@@ -1,5 +1,5 @@
-from telegram.ext import CommandHandler
 from telegram import Update
+from telegram.ext import CommandHandler
 
 from bot import app
 from bot.repository import repo

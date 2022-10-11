@@ -47,7 +47,7 @@ async def my_adverts(update: Update, context) -> int | str:
     msg = update.message
     user_data = context.user_data
 
-    user_data[ADVERTS] = await repo.advert.get_user_posts(msg.chat.id)
+    user_data[ADVERTS] = await repo.advert.get_user_adverts(msg.chat.id)
 
     if not user_data[ADVERTS]:
         await msg.reply_text(cfg.Txt.no_user_adverts_found)
@@ -268,12 +268,12 @@ date_value_error = _error(cfg.Txt.date_value_error)
 photo_value_error = _error(cfg.Txt.photo_value_error)
 
 
-advert_user_conv = ConversationHandler(
+post_edit_show_advert_conv = ConversationHandler(
     entry_points=[
         CommandHandler(cfg.Cmd.post_advert, post_advert),
         CommandHandler(cfg.Cmd.my_adverts, my_adverts),
     ],
-    states={  # type: ignore
+    states={
         DISTINCT: [
             MessageHandler(
                 filters.Text(list(cfg.Btn.distinct_fields.values())), distinct
@@ -352,4 +352,4 @@ advert_user_conv = ConversationHandler(
     fallbacks=[CommandHandler(cfg.Cmd.cancel, cancel)],
 )
 
-app.add_handler(advert_user_conv)
+app.add_handler(post_edit_show_advert_conv)

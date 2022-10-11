@@ -1,11 +1,12 @@
 from collections import defaultdict
 
-from telegram import Update
-from telegram import InlineKeyboardMarkup, ReplyKeyboardRemove
-from telegram.ext import CommandHandler
-from telegram.ext import ConversationHandler
-from telegram.ext import CallbackQueryHandler
+from telegram import Update, InlineKeyboardMarkup, ReplyKeyboardRemove
 from telegram.constants import ParseMode
+from telegram.ext import (
+    CommandHandler,
+    ConversationHandler,
+    CallbackQueryHandler,
+)
 
 from bot import app, cfg, helpers, entity
 from bot.repository import repo
@@ -61,7 +62,7 @@ async def choose_filter(update: Update, context) -> str | int:
         return await category_filter(update, context)
     elif query.data in [FLOOR, NUM_OF_ROOMS, PRICE]:
         return await number_filter(update, context)
-    elif query.data == cfg.Btn.cb_filter_search:
+    elif query.data == [*cfg.Btn.filter_search.keys()][0]:
         user_data[SELECTED] = None
         return await filter_search(update, context)
 
@@ -73,6 +74,8 @@ async def filter_search(update: Update, context) -> str | int:
     msg = query.message
     user_data = context.user_data
     filter_data = user_data[FILTER]
+
+    await query.answer()
 
     fltr = entity.AdvertFilter.from_dict(filter_data)
     adverts = await repo.advert.get_by_filter(fltr)
@@ -114,14 +117,7 @@ async def category_filter(update: Update, context) -> int:
         DISTINCT: cfg.Btn.distinct_fields,
         BUILDING_TYPE: cfg.Btn.building_type_fields,
     }
-
     fields = categories[selected_data]
-
-    if query.data in fields:
-        if fields[query.data] in filter_data[selected_data]:
-            filter_data[selected_data].remove(fields[query.data])
-        else:
-            filter_data[selected_data].append(fields[query.data])
 
     nav_buttons = {**cfg.Btn.filter_distinct_all, **cfg.Btn.filter_back}
     kb = [
@@ -129,6 +125,12 @@ async def category_filter(update: Update, context) -> int:
         *helpers.prepare_keyboard(nav_buttons, is_inline=True),
     ]
     rm = InlineKeyboardMarkup(kb)
+
+    if query.data in fields:
+        if fields[query.data] in filter_data[selected_data]:
+            filter_data[selected_data].remove(fields[query.data])
+        else:
+            filter_data[selected_data].append(fields[query.data])
 
     text = cfg.Txt.filter_msg(user_data[FILTER])
     await query.edit_message_text(
@@ -144,20 +146,17 @@ async def number_filter(update: Update, context) -> int | str:
 
     await query.answer()
 
-    if query.data == cfg.Btn.cb_filter_num_from:
-        user_data[NUMBER_ENTER_STATE] = cfg.Btn.cb_filter_num_from
-        return await number_enter(update, context)
-    elif query.data == cfg.Btn.cb_filter_num_to:
-        user_data[NUMBER_ENTER_STATE] = cfg.Btn.cb_filter_num_to
-        return await number_enter(update, context)
-
-    from_to_buttons = {**cfg.Btn.filter_from, **cfg.Btn.filter_to}
+    from_to_buttons = {**cfg.Btn.filter_num_from, **cfg.Btn.filter_num_to}
+    user_data[NUMBER_ENTER_STATE] = query.data
     nav_buttons = {**cfg.Btn.filter_distinct_all, **cfg.Btn.filter_back}
     kb = [
         *helpers.prepare_keyboard(from_to_buttons, 2, is_inline=True),
         *helpers.prepare_keyboard(nav_buttons, is_inline=True),
     ]
     rm = InlineKeyboardMarkup(kb)
+
+    if query.data in from_to_buttons:
+        return await number_enter(update, context)
 
     text = cfg.Txt.filter_msg(user_data[FILTER])
     await query.edit_message_text(
@@ -176,12 +175,15 @@ async def number_enter(update: Update, context) -> int:
 
     await query.answer()
 
-    indicies = {cfg.Btn.cb_filter_num_from: 0, cfg.Btn.cb_filter_num_to: 1}
+    indicies = {
+        [*cfg.Btn.filter_num_from.keys()][0]: 0,
+        [*cfg.Btn.filter_num_to.keys()][0]: 1,
+    }
     index = indicies[state]
 
     if query.data in {**cfg.Btn.nums, **cfg.Btn.nums_nav}:
         filter_range = filter_data[selected_data]
-        if query.data == cfg.Btn.cb_num_del:
+        if query.data == [*cfg.Btn.num_del.keys()][0]:
             if not filter_range:
                 filter_range = ["0", "0"]
             elif len(filter_range[index]) == 1:
@@ -227,21 +229,25 @@ search_conversation = ConversationHandler(
         ],
         CATEGORY_FILTER: [
             CallbackQueryHandler(
-                filter_all, pattern=f"^{cfg.Btn.cb_filter_all}$"
+                filter_all, pattern=f"^{[*cfg.Btn.filter_all.keys()][0]}$"
             ),
-            CallbackQueryHandler(search, pattern=f"^{cfg.Btn.cb_filter_back}$"),
+            CallbackQueryHandler(
+                search, pattern=f"^{[*cfg.Btn.filter_back.keys()][0]}$"
+            ),
             CallbackQueryHandler(category_filter, pattern="^.*$"),
         ],
         NUMBER_FILTER: [
             CallbackQueryHandler(
-                filter_all, pattern=f"^{cfg.Btn.cb_filter_all}$"
+                filter_all, pattern=f"^{[*cfg.Btn.filter_all.keys()][0]}$"
             ),
-            CallbackQueryHandler(search, pattern=f"^{cfg.Btn.cb_filter_back}$"),
+            CallbackQueryHandler(
+                search, pattern=f"^{[*cfg.Btn.filter_back.keys()][0]}$"
+            ),
             CallbackQueryHandler(number_filter, pattern="^.*$"),
         ],
         NUMBER_ENTER: [
             CallbackQueryHandler(
-                number_filter, pattern=f"^{cfg.Btn.cb_filter_back}$"
+                number_filter, pattern=f"^{[*cfg.Btn.filter_back.keys()][0]}$"
             ),
             CallbackQueryHandler(number_enter, pattern="^.*$"),
         ],

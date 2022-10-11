@@ -1,16 +1,22 @@
-import enum
+import abc
+from enum import Enum
+from typing import Dict
 from uuid import UUID, uuid4
-from datetime import datetime, date
-
-from pydantic import BaseModel, validator
-
-class StatusEnum(enum.Enum):
-    PENDING = 1
-    APPROVED = 2
-    HIDDEN = 3
+from datetime import datetime
+from dataclasses import dataclass, asdict, field
 
 
-class User(BaseModel):
+class AdvertStatusEnum(Enum):
+    PENDING = "розглядається"
+    APPROVED = "опубліковано"
+
+
+@dataclass(slots=True)
+class BaseEntity(abc.ABC):
+    ...
+
+@dataclass(slots=True, kw_only=True)
+class User(BaseEntity):
     id: int
     username: str
     first_name: str
@@ -18,9 +24,8 @@ class User(BaseModel):
     create_date: datetime = datetime.now()
 
 
-class Advert(BaseModel):
-    id: UUID = uuid4()
-    status: StatusEnum = StatusEnum.PENDING
+@dataclass(slots=True, kw_only=True)
+class Advert(BaseEntity):
     user_id: int
     distinct: str
     street: str
@@ -30,13 +35,55 @@ class Advert(BaseModel):
     num_of_rooms: int
     layout: str
     description: str
-    settlement_date: date
+    settlement_date: str
     price: int
     contact: str
     photo: list[str]
+    id: UUID = uuid4()
+    status: AdvertStatusEnum = AdvertStatusEnum.PENDING
     create_date: datetime = datetime.now()
 
-    @validator("settlement_date", pre=True)
-    def parse_birthdate(cls, value):  # pylint: disable
-        return datetime.strptime(value, "%d.%m.%y").date()
+    dict = asdict
 
+    @staticmethod
+    def from_dict(d: Dict):
+        res = {
+            "user_id": int(d["user_id"]),
+            "distinct": str(d["distinct"]),
+            "street": str(d["street"]),
+            "building_type": str(d["building_type"]),
+            "floor": int(d["floor"]),
+            "square": int(d["square"]),
+            "num_of_rooms": int(d["num_of_rooms"]),
+            "layout": str(d["layout"]),
+            "description": str(d["description"]),
+            "settlement_date": str(d["settlement_date"]),
+            "price": int(d["price"]),
+            "contact": str(d["contact"]),
+            "photo": list(d["photo"]),
+        }
+        if d.get("id"):
+            res["id"] = d["id"]
+            res["status"] = d["status"]
+            res["create_date"] = d["create_date"]
+        return Advert(**res)
+
+@dataclass(slots=True, kw_only=True)
+class AdvertFilter:
+    distinct: list
+    building_type: list
+    floor: list
+    num_of_rooms: list
+    price: list
+    status: AdvertStatusEnum = AdvertStatusEnum.APPROVED
+
+    @staticmethod
+    def from_dict(d: dict):
+        res = {
+            "distinct": d["distinct"],
+            "building_type": d["building_type"],
+            "floor": [int(i) for i in d["floor"]],
+            "num_of_rooms": [int(i) for i in d["num_of_rooms"]],
+            "price": [int(i) for i in d["price"]]
+        }
+        return AdvertFilter(**res)

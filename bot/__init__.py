@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 BOT_WEBHOOK_URL = os.getenv("BOT_WEBHOOK_URL") or ""
-BOT_PORT = int(os.getenv("BOT_PORT", "8443"))
+PORT = int(os.getenv("PORT", "8443"))
 BOT_TOKEN = os.getenv("BOT_TOKEN") or ""
 DB_URI = os.getenv("DB_URI") or ""
 

@@ -1,4 +1,4 @@
-from bot import app, BOT_TOKEN, BOT_WEBHOOK_URL, BOT_PORT
+from bot import app, BOT_TOKEN, BOT_WEBHOOK_URL, PORT
 from .handler import start, post_edit_show_advert, search, review
 
 
@@ -9,7 +9,7 @@ __all__ = ["start", "post_edit_show_advert", "search", "review"]
 if __name__ == "__main__":
     app.run_webhook(
         listen="0.0.0.0",
-        port=5000,
+        port=PORT,
         url_path=BOT_TOKEN,
         webhook_url=BOT_WEBHOOK_URL + BOT_TOKEN,
     )

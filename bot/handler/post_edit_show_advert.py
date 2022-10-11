@@ -25,7 +25,7 @@ from bot.cfg import (
 )
 
 END = ConversationHandler.END
-BUCKET_KEY, ADVERTS, OVERVIEW, EDIT, MY_ADVERTS_OVERVIEW = range(5)
+BUCKET_KEY, ADVERTS, OVERVIEW, EDIT, MY_ADVERTS_OVERVIEW = range(200, 205)
 
 
 async def post_advert(update: Update, context) -> str:

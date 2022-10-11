@@ -10,7 +10,7 @@ from bot import app, entity, cfg, helpers
 from bot.repository import repo
 
 END = ConversationHandler.END
-ADVERTS, REVIEW = range(2)
+ADVERTS, REVIEW = range(300, 302)
 
 
 

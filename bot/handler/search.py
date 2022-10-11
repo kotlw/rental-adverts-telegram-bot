@@ -22,13 +22,14 @@ END = ConversationHandler.END
     NUMBER_FILTER,
     NUMBER_ENTER,
     NUMBER_ENTER_STATE,
-) = range(7)
+) = range(100, 107)
 
 
 async def search(update: Update, context) -> int:
     user_data = context.user_data
 
     user_data[FILTER] = user_data.get(FILTER, defaultdict(list))
+
     kb = [
         *helpers.prepare_keyboard(cfg.Btn.filter_fields, 2, is_inline=True),
         *helpers.prepare_keyboard(cfg.Btn.filter_search, is_inline=True),

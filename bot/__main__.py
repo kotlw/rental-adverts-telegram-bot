@@ -11,9 +11,12 @@ __all__ = ["start", "post_edit_show_advert", "search", "review", "init_db"]
 
 
 if __name__ == "__main__":
-    app.run_webhook(
-        listen="0.0.0.0",
-        port=PORT,
-        url_path=BOT_TOKEN,
-        webhook_url=BOT_WEBHOOK_URL + BOT_TOKEN,
-    )
+    if not PROD:
+        app.run_polling()
+    else:
+        app.run_webhook(
+            listen="0.0.0.0",
+            port=PORT,
+            url_path=BOT_TOKEN,
+            webhook_url=BOT_WEBHOOK_URL + BOT_TOKEN,
+        )

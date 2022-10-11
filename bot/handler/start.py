@@ -1,8 +1,9 @@
 from telegram.ext import CommandHandler
 from telegram import Update
 
-from bot import app, entity, cfg
-from bot.repository import repo
+import cfg
+import entity
+from repository import repo
 
 
 async def start(update: Update, _):
@@ -16,5 +17,3 @@ async def start(update: Update, _):
 
 
 start_command = CommandHandler(cfg.Cmd.start, start)
-
-app.add_handler(start_command)

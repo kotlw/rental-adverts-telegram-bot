@@ -1,6 +1,14 @@
+import os
 from dataclasses import dataclass
 
-from bot import entity
+import entity
+
+
+PROD = bool(os.getenv("PROD", ""))
+BOT_WEBHOOK_URL = os.getenv("BOT_WEBHOOK_URL", "")
+PORT = int(os.getenv("PORT", "8443"))
+BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+DB_URI = os.getenv("DB_URI", "")
 
 
 DISTINCT = "distinct"

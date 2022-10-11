@@ -7,9 +7,11 @@ from telegram.ext import (
     filters,
 )
 
-from bot import app, entity, cfg, helpers
-from bot.repository import repo
-from bot.cfg import (
+import cfg
+import entity
+import helpers
+from repository import repo
+from cfg import (
     DISTINCT,
     STREET,
     BUILDING_TYPE,
@@ -351,5 +353,3 @@ post_edit_show_advert_conv = ConversationHandler(
     },
     fallbacks=[CommandHandler(cfg.Cmd.cancel, cancel)],
 )
-
-app.add_handler(post_edit_show_advert_conv)

@@ -6,8 +6,10 @@ from telegram.ext import (
     filters,
 )
 
-from bot import app, entity, cfg, helpers
-from bot.repository import repo
+import cfg
+import entity
+import helpers
+from repository import repo
 
 END = ConversationHandler.END
 ADVERTS, REVIEW = range(300, 302)
@@ -96,5 +98,3 @@ review_adverts_conv = ConversationHandler(
     },
     fallbacks=[CommandHandler(cfg.Cmd.cancel, cancel)],
 )
-
-app.add_handler(review_adverts_conv)

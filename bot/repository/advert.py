@@ -13,8 +13,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 
-from bot import entity, cfg
-from bot.repository import base
+import cfg
+import entity
+from repository import base
 
 
 class AdvertModel(base.BaseModel):

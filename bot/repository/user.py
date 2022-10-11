@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 
-from bot import entity
-from bot.repository import base
+import entity
+from repository import base
 
 
 class UserModel(base.BaseModel):

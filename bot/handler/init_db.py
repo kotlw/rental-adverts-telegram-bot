@@ -1,8 +1,7 @@
 from telegram import Update
 from telegram.ext import CommandHandler
 
-from bot import app
-from bot.repository import repo
+from repository import repo
 
 
 async def init_db(update: Update, _):
@@ -12,4 +11,3 @@ async def init_db(update: Update, _):
 
 init_db_command = CommandHandler("init_db", init_db)
 
-app.add_handler(init_db_command)

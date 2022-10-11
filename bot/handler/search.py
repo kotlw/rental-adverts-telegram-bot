@@ -8,9 +8,11 @@ from telegram.ext import (
     CallbackQueryHandler,
 )
 
-from bot import app, cfg, helpers, entity
-from bot.repository import repo
-from bot.cfg import DISTINCT, BUILDING_TYPE, FLOOR, NUM_OF_ROOMS, PRICE
+import cfg
+import entity
+import helpers
+from repository import repo
+from cfg import DISTINCT, BUILDING_TYPE, FLOOR, NUM_OF_ROOMS, PRICE
 
 
 END = ConversationHandler.END
@@ -222,7 +224,7 @@ async def cancel(update: Update, _) -> int:
     return END
 
 
-search_conversation = ConversationHandler(
+search_conv = ConversationHandler(
     entry_points=[CommandHandler(cfg.Cmd.search, search)],
     states={  # type: ignore
         CHOOSE_FILTER: [
@@ -255,5 +257,3 @@ search_conversation = ConversationHandler(
     },
     fallbacks=[CommandHandler(cfg.Cmd.cancel, cancel)],
 )
-
-app.add_handler(search_conversation)

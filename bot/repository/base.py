@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 from sqlalchemy.ext.declarative import declarative_base
 
-from bot import entity
+import entity
 
 
 Base = declarative_base()

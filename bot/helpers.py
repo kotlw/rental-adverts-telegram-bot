@@ -6,15 +6,13 @@ from telegram import (
     InputMediaAudio,
     InputMediaVideo,
     InputMediaDocument,
-    ReplyKeyboardMarkup,
     InlineKeyboardButton,
-    InlineKeyboardMarkup,
 )
 from telegram.ext import filters
 from telegram.constants import ParseMode
-from telegram._utils.types import ReplyMarkup
 
-from bot import entity, cfg
+import cfg
+import entity
 
 
 def create_advert_media_group(
@@ -36,28 +34,6 @@ def create_advert_media_group(
     )
 
     return media
-
-
-def create_reply_markup(
-    items: dict[str, str], cols: int = 1, is_inline: bool = False
-) -> InlineKeyboardMarkup:
-
-    result = []
-    bucket = []
-
-    for k, v in items.items():
-        if len(bucket) == cols:
-            result.append(bucket)
-            bucket = []
-
-        b = InlineKeyboardButton(v, callback_data=str(k)) if is_inline else v
-        bucket.append(b)
-
-    if bucket:
-        result.append(bucket)
-
-    wrapper = InlineKeyboardMarkup if is_inline else ReplyKeyboardMarkup
-    return wrapper(result)
 
 
 def prepare_keyboard(
